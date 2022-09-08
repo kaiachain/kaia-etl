@@ -112,6 +112,9 @@ logging_basic_config()
     "--s3-bucket", default=None, type=str, help="S3 bucket for syncing export data."
 )
 @click.option(
+    "--gcs-bucket", default=None, type=str, help="GCS bucket for syncing export data."
+)
+@click.option(
     "--file-format",
     default="json",
     show_default=True,
@@ -149,6 +152,7 @@ def export_trace_group(
     timeout,
     enrich,
     s3_bucket,
+    gcs_bucket,
     file_format,
     file_maxlines,
     compress,
@@ -223,6 +227,21 @@ def export_trace_group(
             s3_bucket,
             tmpdir,
             {traces_output, contracts_output, tokens_output},
+            file_maxlines is None,
+        )
+        shutil.rmtree(tmpdir)
+
+    if gcs_bucket is not None:
+        sync_to_gcs(
+            gcs_bucket,
+            tmpdir,
+            {
+                blocks_output,
+                transactions_output,
+                receipts_output,
+                logs_output,
+                token_transfers_output,
+            },
             file_maxlines is None,
         )
         shutil.rmtree(tmpdir)

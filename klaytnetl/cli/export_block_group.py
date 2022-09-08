@@ -38,6 +38,7 @@ from klaytnetl.providers.auto import get_provider_from_uri
 from klaytnetl.thread_local_proxy import ThreadLocalProxy
 from klaytnetl.utils import return_provider
 from klaytnetl.cli.s3_sync import get_path, sync_to_s3
+from klaytnetl.cli.gcs_sync import sync_to_gcs
 
 logging_basic_config()
 
@@ -123,6 +124,9 @@ logging_basic_config()
     "--s3-bucket", default=None, type=str, help="S3 bucket for syncing export data."
 )
 @click.option(
+    "--gcs-bucket", default=None, type=str, help="GCS bucket for syncing export data."
+)
+@click.option(
     "--file-format",
     default="json",
     type=str,
@@ -163,6 +167,7 @@ def export_block_group(
     logs_output,
     token_transfers_output,
     s3_bucket,
+    gcs_bucket,
     file_format,
     file_maxlines,
     compress,
@@ -191,7 +196,7 @@ def export_block_group(
         file_maxlines = None
 
     # s3 export
-    if s3_bucket is not None:
+    if s3_bucket is not None or gcs_bucket is not None:
         tmpdir = tempfile.mkdtemp()
     else:
         tmpdir = None
@@ -243,6 +248,21 @@ def export_block_group(
     if s3_bucket is not None:
         sync_to_s3(
             s3_bucket,
+            tmpdir,
+            {
+                blocks_output,
+                transactions_output,
+                receipts_output,
+                logs_output,
+                token_transfers_output,
+            },
+            file_maxlines is None,
+        )
+        shutil.rmtree(tmpdir)
+
+    if gcs_bucket is not None:
+        sync_to_gcs(
+            gcs_bucket,
             tmpdir,
             {
                 blocks_output,
