@@ -11,7 +11,7 @@ long_description = read('README.md') if os.path.isfile("README.md") else ""
 
 setup(
     name='klaytn-etl-cli',
-    version='0.1.1',
+    version='0.2.0',
     author='Yongchan Hong',
     author_email='chan.hong@krustuniverse.com',
     description='Tools for exporting Klaytn blockchain data to JSON',
