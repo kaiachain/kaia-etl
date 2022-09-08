@@ -41,6 +41,7 @@ from klaytnetl.providers.auto import get_provider_from_uri
 from klaytnetl.thread_local_proxy import ThreadLocalProxy
 from klaytnetl.utils import return_provider
 from klaytnetl.cli.s3_sync import get_path, sync_to_s3
+from klaytnetl.cli.gcs_sync import sync_to_gcs
 
 logging_basic_config()
 
