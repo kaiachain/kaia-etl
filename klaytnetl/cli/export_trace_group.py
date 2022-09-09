@@ -184,7 +184,7 @@ def export_trace_group(
     }
 
     # s3 export
-    if s3_bucket is not None:
+    if s3_bucket or gcs_bucket is not None:
         tmpdir = tempfile.mkdtemp()
     else:
         tmpdir = None
