@@ -236,13 +236,7 @@ def export_trace_group(
         sync_to_gcs(
             gcs_bucket,
             tmpdir,
-            {
-                blocks_output,
-                transactions_output,
-                receipts_output,
-                logs_output,
-                token_transfers_output,
-            },
+            {traces_output, contracts_output, tokens_output},
             file_maxlines is None,
         )
         shutil.rmtree(tmpdir)
