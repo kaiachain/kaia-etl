@@ -171,6 +171,11 @@ def export_trace_group(
             "At least one of --traces-output, --contracts-output, or --tokens-output options must be provided"
         )
 
+    if s3_bucket and gcs_bucket:
+        raise ValueError(
+            "Only one export option is allowed - S3 or GCS"
+        )
+
     if file_format not in {"json", "csv"}:
         raise ValueError('"--file-format" option only supports "json" or "csv".')
 
@@ -184,7 +189,7 @@ def export_trace_group(
     }
 
     # s3 export
-    if s3_bucket or gcs_bucket is not None:
+    if s3_bucket is not None or gcs_bucket is not None:
         tmpdir = tempfile.mkdtemp()
     else:
         tmpdir = None

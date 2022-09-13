@@ -189,6 +189,12 @@ def export_block_group(
             "or --token-transfers-output options must be provided"
         )
 
+
+    if s3_bucket and gcs_bucket:
+        raise ValueError(
+            "Only one export option is allowed - S3 or GCS"
+        )
+
     if file_format not in {"json", "csv"}:
         raise ValueError('"--file-format" option only supports "json" or "csv".')
 
