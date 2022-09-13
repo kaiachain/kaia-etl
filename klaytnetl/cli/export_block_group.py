@@ -202,7 +202,7 @@ def export_block_group(
         file_maxlines = None
 
     # s3 export
-    if s3_bucket is not None or gcs_bucket is not None:
+    if s3_bucket or gcs_bucket:
         tmpdir = tempfile.mkdtemp()
     else:
         tmpdir = None
@@ -251,7 +251,7 @@ def export_block_group(
     )
     job.run()
 
-    if s3_bucket is not None:
+    if s3_bucket:
         sync_to_s3(
             s3_bucket,
             tmpdir,
@@ -266,7 +266,7 @@ def export_block_group(
         )
         shutil.rmtree(tmpdir)
 
-    if gcs_bucket is not None:
+    if gcs_bucket:
         sync_to_gcs(
             gcs_bucket,
             tmpdir,
