@@ -41,6 +41,7 @@ from klaytnetl.providers.auto import get_provider_from_uri
 from klaytnetl.thread_local_proxy import ThreadLocalProxy
 from klaytnetl.utils import return_provider
 from klaytnetl.cli.s3_sync import get_path, sync_to_s3
+from klaytnetl.cli.gcs_sync import sync_to_gcs
 
 logging_basic_config()
 
@@ -112,6 +113,9 @@ logging_basic_config()
     "--s3-bucket", default=None, type=str, help="S3 bucket for syncing export data."
 )
 @click.option(
+    "--gcs-bucket", default=None, type=str, help="GCS bucket for syncing export data."
+)
+@click.option(
     "--file-format",
     default="json",
     show_default=True,
@@ -149,6 +153,7 @@ def export_trace_group(
     timeout,
     enrich,
     s3_bucket,
+    gcs_bucket,
     file_format,
     file_maxlines,
     compress,
@@ -166,6 +171,11 @@ def export_trace_group(
             "At least one of --traces-output, --contracts-output, or --tokens-output options must be provided"
         )
 
+    if s3_bucket and gcs_bucket:
+        raise ValueError(
+            "Only one export option is allowed - S3 or GCS"
+        )
+
     if file_format not in {"json", "csv"}:
         raise ValueError('"--file-format" option only supports "json" or "csv".')
 
@@ -179,7 +189,7 @@ def export_trace_group(
     }
 
     # s3 export
-    if s3_bucket is not None:
+    if s3_bucket or gcs_bucket:
         tmpdir = tempfile.mkdtemp()
     else:
         tmpdir = None
@@ -218,9 +228,18 @@ def export_trace_group(
 
     job.run()
 
-    if s3_bucket is not None:
+    if s3_bucket:
         sync_to_s3(
             s3_bucket,
+            tmpdir,
+            {traces_output, contracts_output, tokens_output},
+            file_maxlines is None,
+        )
+        shutil.rmtree(tmpdir)
+
+    if gcs_bucket:
+        sync_to_gcs(
+            gcs_bucket,
             tmpdir,
             {traces_output, contracts_output, tokens_output},
             file_maxlines is None,
