@@ -63,6 +63,7 @@ class ExportTraceGroupJob(BaseJob):
         max_workers,
         enrich,
         item_exporter,
+        log_percentage_step,
         export_traces=True,
         export_contracts=True,
         export_tokens=True,
@@ -73,7 +74,7 @@ class ExportTraceGroupJob(BaseJob):
 
         self.batch_web3_provider = batch_web3_provider
 
-        self.batch_work_executor = BatchWorkExecutor(batch_size, max_workers)
+        self.batch_work_executor = BatchWorkExecutor(batch_size, max_workers, log_percentage_step)
         self.item_exporter = item_exporter
 
         self.export_traces = export_traces

@@ -45,7 +45,7 @@ RETRY_EXCEPTIONS = (
 # Executes the given work in batches, reducing the batch size exponentially in case of errors.
 class BatchWorkExecutor:
     def __init__(
-        self, starting_batch_size, max_workers, retry_exceptions=RETRY_EXCEPTIONS
+        self, starting_batch_size, max_workers, log_percentage_step, retry_exceptions=RETRY_EXCEPTIONS
     ):
         self.batch_size = starting_batch_size
         self.max_workers = max_workers
@@ -53,7 +53,7 @@ class BatchWorkExecutor:
         # and allows monitoring in-progress futures and failing fast in case of errors.
         self.executor = FailSafeExecutor(BoundedExecutor(1, self.max_workers))
         self.retry_exceptions = retry_exceptions
-        self.progress_logger = ProgressLogger()
+        self.progress_logger = ProgressLogger(log_percentage_step=log_percentage_step)
 
     def execute(self, work_iterable, work_handler, total_items=None):
         self.progress_logger.start(total_items=total_items)

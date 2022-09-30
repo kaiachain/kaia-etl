@@ -141,6 +141,12 @@ logging_basic_config()
     help="Input either baobab or cypress to obtain public provider"
     "If not provided, the option will be disabled.",
 )
+@click.option(
+    "--log-percentage-step",
+    default=10,
+    type=int,
+    help="How often to show log percentage step"
+)
 def export_trace_group(
     start_block,
     end_block,
@@ -158,6 +164,7 @@ def export_trace_group(
     file_maxlines,
     compress,
     network,
+    log_percentage_step,
 ):
     """Exports traces group from Klaytn node."""
     if network:
@@ -221,6 +228,7 @@ def export_trace_group(
         max_workers=max_workers,
         enrich=enrich,
         item_exporter=exporter,
+        log_percentage_step=log_percentage_step,
         export_traces=traces_output is not None,
         export_contracts=contracts_output is not None,
         export_tokens=tokens_output is not None,
