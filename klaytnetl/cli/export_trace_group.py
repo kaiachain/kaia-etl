@@ -135,6 +135,12 @@ logging_basic_config()
     help="Enable compress option using gzip. If not provided, the option will be disabled.",
 )
 @click.option(
+    "--detailed-trace-log",
+    is_flag=True,
+    type=bool,
+    help="Detailed log option for trace count. If not provided, the option will be disabled."
+)
+@click.option(
     "--network",
     default=None,
     type=str,
@@ -163,6 +169,7 @@ def export_trace_group(
     file_format,
     file_maxlines,
     compress,
+    detailed_trace_log,
     network,
     log_percentage_step,
 ):
@@ -229,6 +236,7 @@ def export_trace_group(
         enrich=enrich,
         item_exporter=exporter,
         log_percentage_step=log_percentage_step,
+        detailed_trace_log=detailed_trace_log,
         export_traces=traces_output is not None,
         export_contracts=contracts_output is not None,
         export_tokens=tokens_output is not None,
