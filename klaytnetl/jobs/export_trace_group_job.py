@@ -64,6 +64,7 @@ class ExportTraceGroupJob(BaseJob):
         enrich,
         item_exporter,
         log_percentage_step,
+        detailed_trace_log=False,
         export_traces=True,
         export_contracts=True,
         export_tokens=True,
@@ -74,7 +75,7 @@ class ExportTraceGroupJob(BaseJob):
 
         self.batch_web3_provider = batch_web3_provider
 
-        self.batch_work_executor = BatchWorkExecutor(batch_size, max_workers, log_percentage_step)
+        self.batch_work_executor = BatchWorkExecutor(batch_size, max_workers, log_percentage_step, detailed_trace_log)
         self.item_exporter = item_exporter
 
         self.export_traces = export_traces
@@ -197,6 +198,7 @@ class ExportTraceGroupJob(BaseJob):
             )
             trace_blocks.extend(trace_blocks_chunk)
 
+        trace_count = 0
         for raw_trace_block in trace_blocks:
             block_number = raw_trace_block.get("block_number")
             block = blocks_map.get(block_number)
@@ -207,6 +209,7 @@ class ExportTraceGroupJob(BaseJob):
             )
 
             for trace in self.trace_mapper.trace_block_to_trace(trace_block):
+                trace_count += 1
 
                 if self.export_traces:
                     self.item_exporter.export_item(
@@ -246,6 +249,7 @@ class ExportTraceGroupJob(BaseJob):
                             self.item_exporter.export_item(
                                 self.token_mapper.token_to_dict(token)
                             )
+        return trace_count
 
     def _end(self):
         self.batch_work_executor.shutdown()
