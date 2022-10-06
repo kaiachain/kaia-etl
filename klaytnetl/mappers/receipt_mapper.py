@@ -24,12 +24,14 @@
 
 import logging
 
-from klaytnetl.domain.receipt import KlaytnRawReceipt
+from klaytnetl.domain.receipt import KlaytnRawReceipt, KlaytnReceipt
 
 from klaytnetl.mappers.base import BaseMapper
 from klaytnetl.mixin.enrichable_mixin import EnrichableMixin
 from klaytnetl.mappers.receipt_log_mapper import KlaytnReceiptLogMapper
 from klaytnetl.utils import hex_to_dec, to_normalized_address
+
+from typing import Union
 
 
 class KlaytnReceiptMapper(BaseMapper, EnrichableMixin):
@@ -50,7 +52,7 @@ class KlaytnReceiptMapper(BaseMapper, EnrichableMixin):
 
             self.receipt_log_mapper = receipt_log_mapper
 
-    def json_dict_to_receipt(self, json_dict, **kwargs) -> KlaytnRawReceipt:
+    def json_dict_to_receipt(self, json_dict, **kwargs) -> Union[KlaytnRawReceipt, KlaytnReceipt]:
         receipt = KlaytnRawReceipt()
 
         receipt.transaction_hash = json_dict.get("transactionHash")
@@ -96,6 +98,12 @@ class KlaytnReceiptMapper(BaseMapper, EnrichableMixin):
         )
         receipt.max_fee_per_gas = hex_to_dec(json_dict.get("maxFeePerGas"))
 
+        if self.enrich:
+            receipt = KlaytnReceipt.enrich(
+                receipt,
+                block_timestamp=kwargs.get("block_timestamp")
+            )
+
         if self.receipt_log_mapper is not None and "logs" in json_dict:
             receipt.logs = [
                 self.receipt_log_mapper.json_dict_to_receipt_log(
@@ -108,8 +116,8 @@ class KlaytnReceiptMapper(BaseMapper, EnrichableMixin):
 
         return receipt
 
-    def receipt_to_dict(self, receipt: KlaytnRawReceipt) -> dict:
-        return {
+    def receipt_to_dict(self, receipt: Union[KlaytnRawReceipt, KlaytnReceipt]) -> dict:
+        receipt_dict = {
             "type": "receipt",
             "transaction_hash": receipt.transaction_hash,
             "transaction_index": receipt.transaction_index,
@@ -144,3 +152,13 @@ class KlaytnReceiptMapper(BaseMapper, EnrichableMixin):
             "max_priority_fee_per_gas": receipt.max_priority_fee_per_gas,
             "max_fee_per_gas": receipt.max_fee_per_gas,
         }
+
+        if self.enrich and isinstance(receipt, KlaytnReceipt):
+            receipt_dict[
+                "block_unix_timestamp"
+            ] = receipt.block_timestamp.timestamp()
+            receipt_dict["block_timestamp"] = (
+                receipt.block_timestamp.isoformat()
+            )
+
+        return receipt_dict
