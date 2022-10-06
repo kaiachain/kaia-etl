@@ -154,9 +154,9 @@ class KlaytnReceiptMapper(BaseMapper, EnrichableMixin):
         }
 
         if self.enrich and isinstance(receipt, KlaytnReceipt):
-            receipt_dict[
-                "block_unix_timestamp"
-            ] = receipt.block_timestamp.timestamp()
+            receipt_dict["block_unix_timestamp"] = (
+                receipt.block_timestamp.timestamp()
+            )
             receipt_dict["block_timestamp"] = (
                 receipt.block_timestamp.isoformat()
             )
