@@ -25,7 +25,8 @@
 from decimal import Decimal
 
 from klaytnetl.domain.base import BaseDomain
-from klaytnetl.utils import validate_address, type_conversion, int_to_decimal
+from klaytnetl.utils import float_to_datetime, validate_address, type_conversion, int_to_decimal
+from datetime import datetime
 from typing import Union, Optional
 
 
@@ -625,3 +626,37 @@ class KlaytnRawReceipt(BaseDomain):
     @max_fee_per_gas.deleter
     def max_fee_per_gas(self) -> None:
         del self._max_fee_per_gas
+
+
+class KlaytnReceipt(KlaytnRawReceipt):
+    def __init__(self):
+        super(KlaytnReceipt, self).__init__()
+
+        self._block_timestamp: datetime = None
+
+    ### Prop: block_timestamp ###
+    @property
+    def block_timestamp(self) -> datetime:
+        return self._block_timestamp
+
+    @block_timestamp.setter
+    def block_timestamp(self, value: Union[datetime, float, int]) -> None:
+        self._block_timestamp = float_to_datetime(value)
+
+    @block_timestamp.deleter
+    def block_timestamp(self) -> None:
+        self._block_timestamp
+
+    @staticmethod
+    def enrich(
+        raw_receipt: KlaytnRawReceipt, block_timestamp
+    ):
+        receipt = KlaytnReceipt()
+
+        for k, v in raw_receipt.__dict__.items():
+            if hasattr(receipt, k):
+                receipt.__setattr__(k, v)
+
+        receipt.block_timestamp = block_timestamp
+
+        return receipt

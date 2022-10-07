@@ -43,7 +43,7 @@ BATCH_CHANGE_COOLDOWN_PERIOD_SECONDS = 2 * 60
 
 # Executes the given work in batches, reducing the batch size exponentially in case of errors.
 class BatchWorkExecutor:
-    def __init__(self, starting_batch_size, max_workers,  log_percentage_step, detailed_trace_log,
+    def __init__(self, starting_batch_size, max_workers, log_percentage_step=10, detailed_trace_log=False,
                  retry_exceptions=RETRY_EXCEPTIONS, max_retries=5):
         self.batch_size = starting_batch_size
         self.max_batch_size = starting_batch_size

@@ -149,10 +149,10 @@ class KlaytnBlockMapper(BaseMapper, EnrichableMixin):
             "size": block.size,
             "extra_data": block.extra_data,
             "gas_used": int(block.gas_used) if serializable else block.gas_used,
-            "timestamp": block.timestamp.isoformat()
+            "block_timestamp": block.timestamp.isoformat()
             if serializable
             else block.timestamp,
-            "unix_timestamp": block.timestamp.timestamp(),
+            "block_unix_timestamp": block.timestamp.timestamp(),
             "transaction_count": block.transaction_count,
             # Klaytn additional properties
             "block_score": block.block_score,

@@ -136,7 +136,6 @@ class KlaytnTransactionMapper(BaseMapper, EnrichableMixin):
         transaction: Union[KlaytnTransaction, KlaytnRawTransaction],
         serializable=True,
     ) -> dict:
-        # FIXME
         transaction_dict = {
             "type": "transaction",
             "hash": transaction.hash,
