@@ -6,12 +6,17 @@ from setuptools import setup, find_packages
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+def version():
+    try:
+        return read('VERSION').strip().lstrip('v')
+    except:
+        return "0.0.0.dev0"
 
 long_description = read('README.md') if os.path.isfile("README.md") else ""
 
 setup(
     name='klaytn-etl-cli',
-    version='0.2.0',
+    version=version(),
     author='Yongchan Hong',
     author_email='chan.hong@krustuniverse.com',
     description='Tools for exporting Klaytn blockchain data to JSON',
