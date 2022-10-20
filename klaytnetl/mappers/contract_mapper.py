@@ -33,7 +33,6 @@ class KlaytnContractMapper(BaseMapper, EnrichableMixin):
     def __init__(self, enrich: bool = False):
         super(KlaytnContractMapper, self).__init__(enrich=enrich)
 
-    # FIXME
     def rpc_result_to_contract(
         self, contract_address, rpc_result
     ) -> Union[KlaytnRawContract, KlaytnContract]:
@@ -53,6 +52,7 @@ class KlaytnContractMapper(BaseMapper, EnrichableMixin):
             "function_sighashes": contract.function_sighashes,
             "is_erc20": contract.is_erc20,
             "is_erc721": contract.is_erc721,
+            "is_erc1155": contract.is_erc1155,
             "block_number": contract.block_number,
         }
 

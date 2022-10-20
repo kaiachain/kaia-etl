@@ -42,20 +42,30 @@ def read_resource(resource_group, file_name):
     return tests.resources.read_resource([RESOURCE_GROUP, resource_group], file_name)
 
 
-CONTRACT_ADDRESSES_UNDER_TEST = [
+ERC721_CONTRACT_ADDRESSES_UNDER_TEST = [
     {
         "contract_address": "0x29032e52f4d83661b4f51f90034d4411cea890f7",
         "block_number": 84412451,
-    }
+    },
+]
+
+ERC1155_CONTRACT_ADDRESSES_UNDER_TEST = [
+    {
+        "contract_address": "0x4e16e2567dd332d4c44474f8b8d3130b5c311cf7",
+        "block_number": 81331002,
+    },
 ]
 
 
 @pytest.mark.parametrize(
     "batch_size,contract_addresses,output_format,resource_group,web3_provider_type",
     [
-        (1, CONTRACT_ADDRESSES_UNDER_TEST, "json", "erc721_contract", "mock"),
+        (1, ERC721_CONTRACT_ADDRESSES_UNDER_TEST, "json", "erc721_contract", "mock"),
         skip_if_slow_tests_disabled(
-            (1, CONTRACT_ADDRESSES_UNDER_TEST, "json", "erc721_contract", "fantrie")
+            (1, ERC721_CONTRACT_ADDRESSES_UNDER_TEST, "json", "erc721_contract", "fantrie")
+        ),
+        skip_if_slow_tests_disabled(
+            (1, ERC1155_CONTRACT_ADDRESSES_UNDER_TEST, "json", "erc1155_contract", "fantrie")
         ),
     ],
 )

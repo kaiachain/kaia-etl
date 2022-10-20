@@ -86,6 +86,20 @@ class KlaytnContractService:
             and c.implements("approve(address,uint256)")
         )
 
+    # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md
+    # https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC1155/ERC1155.sol
+    # Found cases where balanceOf was not implemented
+    def is_erc1155_contract(self, function_sighashes):
+        c = ContractWrapper(function_sighashes)
+        return (
+               c.implements_any_of(
+                   "balanceOf(address,uint256)", "balanceOfBatch(address[],uint256[])"
+               ) and \
+               c.implements("setApprovalForAll(address, bool)") and \
+               c.implements("isApprovedForAll(address,address)") and \
+               c.implements("safeTransferFrom(address,address,uint256,uint256,bytes)") and \
+               c.implements("safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)")
+        )
 
 def clean_bytecode(bytecode):
     if bytecode is None or bytecode == "0x":
