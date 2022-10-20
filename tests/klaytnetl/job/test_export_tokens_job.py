@@ -56,7 +56,7 @@ def read_resource(resource_group, file_name):
                 "erc1155_tokens",
                 "fantrie",)
         ),  # ChickiFarm Ornaments
-        skip_if_slow_tegsts_disabled(
+        skip_if_slow_tests_disabled(
             (["0x9e481eb17d3c3c07d7a6ab571b4ba8ef432b5cf2"], "erc20_tokens", "fantrie")
         ),
     ],
