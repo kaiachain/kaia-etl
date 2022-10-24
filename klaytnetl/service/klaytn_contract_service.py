@@ -45,9 +45,17 @@ class KlaytnContractService:
                 push4_instructions = [
                     inst for inst in instructions if inst.name == "PUSH4"
                 ]
-                return sorted(
-                    list(set("0x" + inst.operand for inst in push4_instructions))
-                )
+
+                push4_list = list(set("0x" + inst.operand for inst in push4_instructions))
+
+                # Special case when balanceOf(address,uint256) becomes PUSH3 due to optimization
+                # https://github.com/blockchain-etl/ethereum-etl/issues/349#issuecomment-1243352201
+                push3_list_erc_1155 = [
+                    "0x00" + inst.operand for inst in instructions if inst.name == "PUSH3" and inst.operand == "fdd58e"
+                ]
+                push4_list.extend(push3_list_erc_1155)
+
+                return sorted(push4_list)
             else:
                 return []
         else:
@@ -88,13 +96,12 @@ class KlaytnContractService:
 
     # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md
     # https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC1155/ERC1155.sol
-    # Found cases where balanceOf was not implemented
     def is_erc1155_contract(self, function_sighashes):
         c = ContractWrapper(function_sighashes)
+        print(c.implements("balanceOf(address, uint256)"), 'see that')
         return (
-               c.implements_any_of(
-                   "balanceOf(address,uint256)", "balanceOfBatch(address[],uint256[])"
-               ) and \
+               c.implements("balanceOf(address, uint256)") and \
+               c.implements("balanceOfBatch(address[],uint256[])") and \
                c.implements("setApprovalForAll(address, bool)") and \
                c.implements("isApprovedForAll(address,address)") and \
                c.implements("safeTransferFrom(address,address,uint256,uint256,bytes)") and \
@@ -119,6 +126,7 @@ class ContractWrapper:
         self.sighashes = sighashes
 
     def implements(self, function_signature):
+        print(function_signature)
         sighash = get_function_sighash(function_signature)
         return sighash in self.sighashes
 
