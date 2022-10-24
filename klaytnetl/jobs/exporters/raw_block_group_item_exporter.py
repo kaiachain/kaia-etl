@@ -37,8 +37,8 @@ BLOCK_FIELDS_TO_EXPORT = [
     "extra_data",
     # 'gas_limit',  # Does not supported by klay_getBlockWithConsensusInfoByNumber
     "gas_used",
-    "timestamp",
-    "unix_timestamp",
+    "block_timestamp",
+    "block_unix_timestamp",
     "transaction_count",
     "block_score",
     "total_block_score",

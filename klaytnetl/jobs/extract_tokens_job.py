@@ -39,7 +39,7 @@ class ExtractTokensJob(ExportTokensJob):
         tokens = [
             contract
             for contract in contracts
-            if contract.get("is_erc20") or contract.get("is_erc721")
+            if contract.get("is_erc20") or contract.get("is_erc721") or contract.get('is_erc1155')
         ]
 
         for token in tokens:

@@ -81,6 +81,9 @@ class ExtractContractsJob(BaseJob):
             contract.is_erc721 = self.contract_service.is_erc721_contract(
                 function_sighashes
             )
+            contract.is_erc1155 = self.contract_service.is_erc1155_contract(
+                function_sighashes
+            )
 
             contracts.append(contract)
 

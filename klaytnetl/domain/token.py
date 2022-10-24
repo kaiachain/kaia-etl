@@ -169,6 +169,7 @@ class KlaytnToken(KlaytnRawToken):
         self._function_sighashes: list = None
         self._is_erc20: bool = None
         self._is_erc721: bool = None
+        self._is_erc1155: bool = None
         self._block_hash: str = None
         self._block_timestamp: datetime = None
         self._transaction_hash: str = None
@@ -221,6 +222,20 @@ class KlaytnToken(KlaytnRawToken):
     @is_erc721.deleter
     def is_erc721(self) -> None:
         del self._is_erc721
+
+    ### Prop: is_erc1155 ###
+    @property
+    def is_erc1155(self) -> bool:
+        return self._is_erc1155
+
+    @is_erc1155.setter
+    def is_erc1155(self, value: bool) -> None:
+        value = type_conversion("token.is_erc1155", value, bool)
+        self._is_erc1155 = value
+
+    @is_erc1155.deleter
+    def is_erc1155(self) -> None:
+        del self._is_erc1155
 
     ### Prop: block_hash ###
     @property
@@ -336,6 +351,7 @@ class KlaytnToken(KlaytnRawToken):
         function_sighashes,
         is_erc20,
         is_erc721,
+        is_erc1155,
         block_hash,
         block_timestamp,
         transaction_hash,
@@ -355,6 +371,7 @@ class KlaytnToken(KlaytnRawToken):
         token.function_sighashes = function_sighashes
         token.is_erc20 = is_erc20
         token.is_erc721 = is_erc721
+        token.is_erc1155 = is_erc1155
 
         # block
         token.block_hash = block_hash
@@ -399,6 +416,7 @@ class KlaytnToken(KlaytnRawToken):
                 function_sighashes=contract.function_sighashes,
                 is_erc20=contract.is_erc20,
                 is_erc721=contract.is_erc721,
+                is_erc1155=contract.is_erc1155,
                 block_hash=contract.block_hash,
                 block_timestamp=contract.block_timestamp,
                 transaction_hash=contract.transaction_hash,

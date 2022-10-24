@@ -63,7 +63,7 @@ class ExportTraceGroupJob(BaseJob):
         max_workers,
         enrich,
         item_exporter,
-        log_percentage_step,
+        log_percentage_step=10,
         detailed_trace_log=False,
         export_traces=True,
         export_contracts=True,
@@ -232,7 +232,7 @@ class ExportTraceGroupJob(BaseJob):
                         )
 
                     if self._require_token and (
-                        contract.is_erc20 or contract.is_erc721
+                        contract.is_erc20 or contract.is_erc721 or contract.is_erc1155
                     ):
                         token_metadata = self.token_service.get_token_metadata(
                             contract.address

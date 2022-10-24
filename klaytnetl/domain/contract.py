@@ -37,6 +37,7 @@ class KlaytnRawContract(BaseDomain):
         self._function_sighashes: list = []
         self._is_erc20: bool = False
         self._is_erc721: bool = False
+        self._is_erc1155: bool = False
         self._block_number: int = None
 
     ### Prop: address ###
@@ -113,6 +114,20 @@ class KlaytnRawContract(BaseDomain):
     @is_erc721.deleter
     def is_erc721(self) -> None:
         del self._is_erc721
+
+    ### Prop: is_erc1155 ###
+    @property
+    def is_erc1155(self) -> bool:
+        return self._is_erc1155
+
+    @is_erc1155.setter
+    def is_erc1155(self, value: bool) -> None:
+        value = type_conversion("contract.is_erc1155", value, bool)
+        self._is_erc1155 = value
+
+    @is_erc1155.deleter
+    def is_erc1155(self) -> None:
+        del self._is_erc1155
 
     ### Prop: block_number ###
     @property

@@ -51,6 +51,7 @@ class KlaytnTokenMapper(BaseMapper, EnrichableMixin):
             token_dict["function_sighashes"] = token.function_sighashes
             token_dict["is_erc20"] = token.is_erc20
             token_dict["is_erc721"] = token.is_erc721
+            token_dict["is_erc1155"] = token.is_erc1155
             token_dict["block_hash"] = token.block_hash
             token_dict["block_unix_timestamp"] = token.block_timestamp.timestamp()
             token_dict["block_timestamp"] = (
