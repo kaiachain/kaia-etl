@@ -30,6 +30,7 @@ from ethereum_dasm.evmdasm import EvmCode, Contract
 class KlaytnContractService:
     def get_function_sighashes(self, bytecode):
         bytecode = clean_bytecode(bytecode)
+        function_sighashes = []
         if bytecode is not None:
             evm_code = EvmCode(
                 contract=Contract(bytecode=bytecode),
@@ -42,20 +43,16 @@ class KlaytnContractService:
                 instructions = [
                     inst for block in basic_blocks for inst in block.instructions
                 ]
-                push4_instructions = [
-                    inst for inst in instructions if inst.name == "PUSH4"
-                ]
 
-                push4_list = list(set("0x" + inst.operand for inst in push4_instructions))
+                for inst in instructions:
+                    # Special case when balanceOf(address,uint256) becomes PUSH3 due to optimization
+                    # https://github.com/blockchain-etl/ethereum-etl/issues/349#issuecomment-1243352201
+                    if inst.name == "PUSH3" and inst.operand == "fdd58e":
+                        function_sighashes.append("0x00" + inst.operand)
+                    if inst.name == "PUSH4":
+                        function_sighashes.append("0x" + inst.operand)
 
-                # Special case when balanceOf(address,uint256) becomes PUSH3 due to optimization
-                # https://github.com/blockchain-etl/ethereum-etl/issues/349#issuecomment-1243352201
-                push3_list_erc_1155 = [
-                    "0x00" + inst.operand for inst in instructions if inst.name == "PUSH3" and inst.operand == "fdd58e"
-                ]
-                push4_list.extend(push3_list_erc_1155)
-
-                return sorted(push4_list)
+                return sorted(list(set(function_sighashes)))
             else:
                 return []
         else:
