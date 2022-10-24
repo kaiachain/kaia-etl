@@ -98,7 +98,6 @@ class KlaytnContractService:
     # https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC1155/ERC1155.sol
     def is_erc1155_contract(self, function_sighashes):
         c = ContractWrapper(function_sighashes)
-        print(c.implements("balanceOf(address, uint256)"), 'see that')
         return (
                c.implements("balanceOf(address, uint256)") and \
                c.implements("balanceOfBatch(address[],uint256[])") and \
@@ -126,7 +125,6 @@ class ContractWrapper:
         self.sighashes = sighashes
 
     def implements(self, function_signature):
-        print(function_signature)
         sighash = get_function_sighash(function_signature)
         return sighash in self.sighashes
 
