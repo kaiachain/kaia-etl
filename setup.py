@@ -12,6 +12,9 @@ def version():
     except:
         return "0.0.0.dev0"
 
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+
 long_description = read('README.md') if os.path.isfile("README.md") else ""
 
 setup(
@@ -31,26 +34,11 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9'
+        'Programming Language :: Python :: 3.9',
     ],
     keywords=['klaytn', 'etl', 'batch'],
     python_requires='>=3.7.2,<4',
-    install_requires=[
-        'web3>=5.29,<6',
-        # eth-rlp is explicitly written to prevent dependency related issue
-        'eth-rlp<0.3',
-        'eth-utils==1.10',
-        'eth-abi==2.1.1',
-        # TODO: This has to be removed when "ModuleNotFoundError: No module named 'eth_utils.toolz'" is fixed at eth-abi
-        'python-dateutil>=2.8.0,<3',
-        'click==8.0.4',
-        'ethereum-dasm==0.1.4',
-        'pytz==2022.1',
-        'base58',
-        'requests',
-        'boto3',
-        'google-cloud-storage'
-    ],
+    install_requires=requirements,
     extras_require={
         'dev': [
             'pytest~=4.3.0'
