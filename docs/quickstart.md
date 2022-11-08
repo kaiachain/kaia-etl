@@ -26,7 +26,7 @@ Export traces
 --output traces.json
 ```
 
-Find other commands [here](klaytnetl/cli/__init__.py).
+Find other commands [here](commands.md).
 
 For the latest version, check out the repo and call 
 ```bash
