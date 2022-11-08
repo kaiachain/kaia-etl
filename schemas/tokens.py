@@ -1,0 +1,116 @@
+TOKENS_SCHEMA = [
+    {
+        "name": "address",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "The address of the token",
+    },
+    {
+        "name": "symbol",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "The symbol of the token",
+    },
+    {
+        "name": "name",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "The name of the token",
+    },
+    {
+        "name": "decimals",
+        "type": "INT64",
+        "mode": "NULLABLE",
+        "description": "The number of decimals the token uses. Use safe_cast for casting to NUMERIC or FLOAT64",
+    },
+    {
+        "name": "total_supply",
+        "type": "STRING", # Due to cases where total_supply is set up really high
+        "mode": "NULLABLE",
+        "description": "The total token supply. Use safe_cast for casting to NUMERIC or FLOAT64",
+    },
+    {
+        "name": "function_sighashes",
+        "type": "STRING",
+        "mode": "REPEATED",
+        "description": "4-byte function signature hashes",
+    },
+    {
+        "name": "is_erc20",
+        "type": "BOOLEAN",
+        "mode": "NULLABLE",
+        "description": "Whether this contract is an ERC20 contract",
+    },
+    {
+        "name": "is_erc721",
+        "type": "BOOLEAN",
+        "mode": "NULLABLE",
+        "description": "Whether this contract is an ERC721 contract",
+    },
+    {
+        "name": "is_erc1155",
+        "type": "BOOLEAN",
+        "mode": "NULLABLE",
+        "description": "Whether this contract is an ERC1155 contract",
+    },
+    {
+        "name": "block_number",
+        "type": "INT64",
+        "mode": "NULLABLE",
+        "description": "Block number corresponding",
+    },
+    {
+        "name": "block_hash",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "Hash of the block",
+    },
+    {
+        "name": "block_timestamp",
+        "type": "TIMESTAMP",
+        "mode": "NULLABLE",
+        "description": "The UTC timestamp for when the block was collated",
+    },
+    {
+        "name": "block_unix_timestamp",
+        "type": "FLOAT64",
+        "mode": "NULLABLE",
+        "description": "The unix timestamp for when the block was collated",
+    },
+    {
+        "name": "transaction_hash",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "Hash of the transactions",
+    },
+    {
+        "name": "transaction_index",
+        "type": "INT64",
+        "mode": "NULLABLE",
+        "description": "Integer of the transactions index position in the block",
+    },
+    {
+        "name": "transaction_receipt_status",
+        "type": "INT64",
+        "mode": "NULLABLE",
+        "description": "Either 1 (success) or 0 (failure) (post Byzantium)",
+    },
+    {
+        "name": "trace_index",
+        "type": "INT64",
+        "mode": "NULLABLE",
+        "description": "Trace index of the trace",
+    },
+    {
+        "name": "trace_status",
+        "type": "INT64",
+        "mode": "NULLABLE",
+        "description": "Either 1 (success) or 0 (failure, due to any operation that can cause the call itself or any top-level call to revert)",
+    },
+    {
+        "name": "creator_address",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "Token creator address",
+    },
+]
