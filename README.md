@@ -3,11 +3,9 @@
 Klaytn ETL lets you convert Klaytn blockchain data into convenient formats like JSONs, CSVs and relational databases.
 This is a fork of [Ethereum ETL](https://github.com/blockchain-etl/ethereum-etl).
 
+[Full documentation available here](http://klaytn-etl.readthedocs.io/).
+
 ***Notice: Klaytn ETL is still on the beta version. However, CLIs are all functional.***
-
-***Documents about command reference will be soon updated.***
-
-***Please check issues to figure out current works.***
 
 ## Quickstart
 Install Klaytn ETL:
