@@ -213,7 +213,7 @@ error                        | string     |
 status                       | bigint     |
 trace_index                  | string     |
 
-You can find column descriptions in [https://github.com/klaytn/klaytn-etl](https://github.com/klaytnetl/klaytn-etl/schema)
+You can find column descriptions in [https://github.com/klaytn/klaytn-etl](https://github.com/klaytn/klaytn-etl/tree/main/schemas)
 
 Note: for the `address` type all hex characters are lower-cased.
 `boolean` type can have 2 values: `True` or `False`.

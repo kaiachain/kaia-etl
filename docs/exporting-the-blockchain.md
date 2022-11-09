@@ -2,7 +2,7 @@
 
 1. Install python 3.7.2+: [https://www.python.org/downloads/](https://www.python.org/downloads/)
 
-1. Launch an endpoint node (https://docs.klaytn.foundation/getting-started/quick-start/launch-an-en) or use pre-existing endpoint (https://docs.klaytn.foundation/dapp/json-rpc/public-en)
+1. Launch an [endpoint node](https://docs.klaytn.foundation/getting-started/quick-start/launch-an-en) or use [pre-existing endpoint](https://docs.klaytn.foundation/dapp/json-rpc/public-en)
  
 1. Install Klaytn ETL: `> pip3 install klaytn-etl-cli`
 

@@ -12,7 +12,7 @@ Export blocks and transactions
 --blocks-output blocks.json --transactions-output transactions.json
 ```
 
-Export ERC20 and ERC721 transfers
+Export ERC20, ERC721, ERC1155 transfers
 
 ```bash
 > klaytnetl export_token_transfers --start-block 0 --end-block 5000 \
