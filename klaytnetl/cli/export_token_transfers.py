@@ -102,7 +102,7 @@ def export_token_transfers(
     tokens,
     network,
 ):
-    """Exports ERC20/ERC721 transfers."""
+    """Exports ERC20/ERC721/ERC1155 transfers."""
     if network:
         provider_uri = return_provider(network)
 

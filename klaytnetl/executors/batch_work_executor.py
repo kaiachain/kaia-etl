@@ -66,6 +66,7 @@ class BatchWorkExecutor:
             self.executor.submit(self._fail_safe_execute, work_handler, batch)
 
     def _fail_safe_execute(self, work_handler, batch):
+        trace_count = 0
         try:
             trace_count = work_handler(batch)
             self._try_increase_batch_size(len(batch))
