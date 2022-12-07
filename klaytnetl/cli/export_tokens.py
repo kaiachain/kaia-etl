@@ -78,7 +78,7 @@ logging_basic_config()
     "If not provided, the option will be disabled.",
 )
 def export_tokens(token_addresses, output, max_workers, provider_uri, network):
-    """Exports ERC20/ERC721 tokens."""
+    """Exports ERC20/ERC721/ERC1155 tokens."""
     if network:
         provider_uri = return_provider(network)
 

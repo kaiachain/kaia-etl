@@ -47,7 +47,7 @@ from klaytnetl.cli.get_keccak_hash import get_keccak_hash
 
 
 @click.group()
-@click.version_option(version="0.1.0")
+@click.version_option(version="0.3.0")
 @click.pass_context
 def cli(ctx):
     pass

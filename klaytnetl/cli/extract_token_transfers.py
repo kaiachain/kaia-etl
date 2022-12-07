@@ -58,7 +58,7 @@ logging_basic_config()
     "-w", "--max-workers", default=5, type=int, help="The maximum number of workers."
 )
 def extract_token_transfers(logs, batch_size, output, max_workers):
-    """Extracts ERC20/ERC721 transfers from logs file."""
+    """Extracts ERC20/ERC721/ERC1155 transfers from logs file."""
     with smart_open(logs, "r") as logs_file:
         if logs.endswith(".json"):
             logs_reader = (json.loads(line) for line in logs_file)
