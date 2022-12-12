@@ -264,7 +264,7 @@ def export_block_group(
             },
             file_maxlines is None,
         )
-        shutil.rmtree(tmpdir)
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
     if gcs_bucket:
         sync_to_gcs(
@@ -279,4 +279,4 @@ def export_block_group(
             },
             file_maxlines is None,
         )
-        shutil.rmtree(tmpdir)
+        shutil.rmtree(tmpdir, ignore_errors=True)

@@ -51,7 +51,7 @@ def sync_to_gcs(bucket, tmpdir, outputs, is_single_file):
             logging.info(f"Transfer {file} --> gcs://{bucket}/{out}")
             blob = bucket_name.blob(f'{bucket}/{out}')
             blob.upload_from_filename(f'{file}')
-        shutil.rmtree(temp_path)
+        shutil.rmtree(temp_path, ignore_errors=True)
 
 
 def _get_files(path, is_single_file):

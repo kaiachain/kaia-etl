@@ -186,4 +186,4 @@ def export_traces(
 
     if s3_bucket is not None:
         sync_to_s3(s3_bucket, tmpdir, {output}, file_maxlines is None)
-        shutil.rmtree(tmpdir)
+        shutil.rmtree(tmpdir, ignore_errors=True)

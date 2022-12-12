@@ -251,7 +251,7 @@ def export_trace_group(
             {traces_output, contracts_output, tokens_output},
             file_maxlines is None,
         )
-        shutil.rmtree(tmpdir)
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
     if gcs_bucket:
         sync_to_gcs(
@@ -260,4 +260,4 @@ def export_trace_group(
             {traces_output, contracts_output, tokens_output},
             file_maxlines is None,
         )
-        shutil.rmtree(tmpdir)
+        shutil.rmtree(tmpdir, ignore_errors=True)
