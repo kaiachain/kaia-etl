@@ -53,10 +53,9 @@ class BufferedItemExporter:
             self._export_item(filename, file_maxlines=self.file_maxlines)
 
     def close(self):
-        cnt = self.counter.increment() - 1
+        cnt = self.counter.increment()
         filename = self._get_filename(counter=cnt)
-        if len(self.item_buffer) > 0:
-            self._export_item(filename, len(self.item_buffer))
+        self._export_item(filename, len(self.item_buffer))
 
     def _get_filename(self, counter):
         return os.path.join(self.dirname, os.path.relpath(f'data-{int((counter-1) / self.file_maxlines):012}.{self.file_format}{".gz" if self.compress else ""}'))
