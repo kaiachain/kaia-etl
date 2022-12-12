@@ -1,4 +1,4 @@
-web3>=5.29,<6
+web3>=5.29,<=5.30
 eth-rlp<0.3
 eth-utils==1.10
 eth-abi==2.1.1
