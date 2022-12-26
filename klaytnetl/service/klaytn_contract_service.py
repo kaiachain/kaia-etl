@@ -25,9 +25,17 @@
 from eth_utils import function_signature_to_4byte_selector
 
 from ethereum_dasm.evmdasm import EvmCode, Contract
+from klaytnetl.erc165_abi import ERC165_ABI
+
+ERC20_INTERFACE = "0x36372b07"
+ERC721_INTERFACE = "0x80ac58cd"
+ERC1155_INTERFACE = "0xd9b67a26"
 
 
 class KlaytnContractService:
+    def __init__(self, web3):
+        self._web3 = web3
+
     def get_function_sighashes(self, bytecode):
         bytecode = clean_bytecode(bytecode)
         function_sighashes = []
@@ -60,9 +68,16 @@ class KlaytnContractService:
 
     # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
     # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC20/ERC20.sol
-    def is_erc20_contract(self, function_sighashes):
+    def is_erc20_contract(self, contract_address, function_sighashes):
         c = ContractWrapper(function_sighashes)
-        return (
+        checksum_address = self._web3.toChecksumAddress(contract_address)
+        contract_165 = self._web3.eth.contract(address=checksum_address, abi=ERC165_ABI)
+        support_interface_20 = (
+            c.implements("supportsInterface(bytes4)")
+            and contract_165.functions.supportsInterface(ERC20_INTERFACE).call()
+        )
+
+        return support_interface_20 or (
             c.implements("totalSupply()")
             and c.implements("balanceOf(address)")
             and c.implements("transfer(address,uint256)")
@@ -80,9 +95,16 @@ class KlaytnContractService:
     # transferFrom(address,address,uint256)
     # safeTransferFrom(address,address,uint256)
     # safeTransferFrom(address,address,uint256,bytes)
-    def is_erc721_contract(self, function_sighashes):
+    def is_erc721_contract(self, contract_address, function_sighashes):
         c = ContractWrapper(function_sighashes)
-        return (
+        checksum_address = self._web3.toChecksumAddress(contract_address)
+        contract_165 = self._web3.eth.contract(address=checksum_address, abi=ERC165_ABI)
+        support_interface_721 = (
+            c.implements("supportsInterface(bytes4)")
+            and contract_165.functions.supportsInterface(ERC721_INTERFACE).call()
+        )
+
+        return support_interface_721 or (
             c.implements("balanceOf(address)")
             and c.implements("ownerOf(uint256)")
             and c.implements_any_of(
@@ -93,16 +115,26 @@ class KlaytnContractService:
 
     # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md
     # https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC1155/ERC1155.sol
-    def is_erc1155_contract(self, function_sighashes):
+    def is_erc1155_contract(self, contract_address, function_sighashes):
         c = ContractWrapper(function_sighashes)
-        return (
-               c.implements("balanceOf(address, uint256)") and \
-               c.implements("balanceOfBatch(address[],uint256[])") and \
-               c.implements("setApprovalForAll(address, bool)") and \
-               c.implements("isApprovedForAll(address,address)") and \
-               c.implements("safeTransferFrom(address,address,uint256,uint256,bytes)") and \
-               c.implements("safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)")
+        checksum_address = self._web3.toChecksumAddress(contract_address)
+        contract_165 = self._web3.eth.contract(address=checksum_address, abi=ERC165_ABI)
+        support_interface_1155 = (
+            c.implements("supportsInterface(bytes4)")
+            and contract_165.functions.supportsInterface(ERC1155_INTERFACE).call()
         )
+
+        return support_interface_1155 or (
+            c.implements("balanceOf(address, uint256)")
+            and c.implements("balanceOfBatch(address[],uint256[])")
+            and c.implements("setApprovalForAll(address, bool)")
+            and c.implements("isApprovedForAll(address,address)")
+            and c.implements("safeTransferFrom(address,address,uint256,uint256,bytes)")
+            and c.implements(
+                "safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)"
+            )
+        )
+
 
 def clean_bytecode(bytecode):
     if bytecode is None or bytecode == "0x":

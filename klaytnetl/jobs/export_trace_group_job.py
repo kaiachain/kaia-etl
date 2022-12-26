@@ -75,7 +75,9 @@ class ExportTraceGroupJob(BaseJob):
 
         self.batch_web3_provider = batch_web3_provider
 
-        self.batch_work_executor = BatchWorkExecutor(batch_size, max_workers, log_percentage_step, detailed_trace_log)
+        self.batch_work_executor = BatchWorkExecutor(
+            batch_size, max_workers, log_percentage_step, detailed_trace_log
+        )
         self.item_exporter = item_exporter
 
         self.export_traces = export_traces
@@ -121,7 +123,7 @@ class ExportTraceGroupJob(BaseJob):
             KlaytnContractMapper(enrich=self.enrich) if self._require_contract else None
         )
         self.contract_service = (
-            KlaytnContractService() if self._require_contract else None
+            KlaytnContractService(self.web3) if self._require_contract else None
         )
 
         self.token_mapper = (
@@ -178,7 +180,7 @@ class ExportTraceGroupJob(BaseJob):
         num = 0
         trace_blocks = []
         while num < len(trace_blocks_rpc):
-            chunk = trace_blocks_rpc[num: num + 20]
+            chunk = trace_blocks_rpc[num : num + 20]
             num = num + 20
             trace_blocks_response = self.batch_web3_provider.make_batch_request(
                 json.dumps(chunk)

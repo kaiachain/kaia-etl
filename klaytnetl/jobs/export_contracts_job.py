@@ -40,6 +40,7 @@ class ExportContractsJob(BaseJob):
         contracts_iterable,
         batch_size,
         batch_web3_provider,
+        web3,
         max_workers,
         item_exporter,
     ):
@@ -49,7 +50,7 @@ class ExportContractsJob(BaseJob):
         self.batch_work_executor = BatchWorkExecutor(batch_size, max_workers)
         self.item_exporter = item_exporter
 
-        self.contract_service = KlaytnContractService()
+        self.contract_service = KlaytnContractService(web3)
         self.contract_mapper = KlaytnContractMapper()
 
     def _start(self):
@@ -98,12 +99,14 @@ class ExportContractsJob(BaseJob):
 
         contract.block_number = block_number
         contract.function_sighashes = function_sighashes
-        contract.is_erc20 = self.contract_service.is_erc20_contract(function_sighashes)
+        contract.is_erc20 = self.contract_service.is_erc20_contract(
+            contract_address, function_sighashes
+        )
         contract.is_erc721 = self.contract_service.is_erc721_contract(
-            function_sighashes
+            contract_address, function_sighashes
         )
         contract.is_erc1155 = self.contract_service.is_erc1155_contract(
-            function_sighashes
+            contract_address, function_sighashes
         )
 
         return contract
