@@ -52,12 +52,13 @@ def read_resource(resource_group, file_name):
 @pytest.mark.parametrize(
     "start_block,end_block,enrich,batch_size,resource_group,web3_provider_type",
     [
-        skip_if_slow_tests_disabled(
-            (77934351, 77934351, True, 1, "trace_groups_enrich", "fantrie")
-        ),
-        skip_if_slow_tests_disabled(
-            (77934351, 77934351, False, 1, "trace_groups_raw", "fantrie")
-        ),
+        # Will resume once debug issue is fixed
+        # skip_if_slow_tests_disabled(
+        #     (77934351, 77934351, True, 1, "trace_groups_enrich", "fantrie")
+        # ),
+        # skip_if_slow_tests_disabled(
+        #     (77934351, 77934351, False, 1, "trace_groups_raw", "fantrie")
+        # ),
     ],
 )
 def test_export_trace_groups_job(
