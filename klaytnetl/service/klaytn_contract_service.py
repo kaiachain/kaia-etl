@@ -68,13 +68,13 @@ class KlaytnContractService:
 
     # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
     # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC20/ERC20.sol
-    def is_erc20_contract(self, contract_address, function_sighashes):
+    def is_erc20_contract(self, contract_address, function_sighashes, block_number='latest'):
         c = ContractWrapper(function_sighashes)
         checksum_address = self._web3.toChecksumAddress(contract_address)
         contract_165 = self._web3.eth.contract(address=checksum_address, abi=ERC165_ABI)
         support_interface_20 = (
             c.implements("supportsInterface(bytes4)")
-            and contract_165.functions.supportsInterface(ERC20_INTERFACE).call()
+            and contract_165.functions.supportsInterface(ERC20_INTERFACE).call(block_identifier=block_number)
         )
 
         return support_interface_20 or (
@@ -95,13 +95,13 @@ class KlaytnContractService:
     # transferFrom(address,address,uint256)
     # safeTransferFrom(address,address,uint256)
     # safeTransferFrom(address,address,uint256,bytes)
-    def is_erc721_contract(self, contract_address, function_sighashes):
+    def is_erc721_contract(self, contract_address, function_sighashes, block_number='latest'):
         c = ContractWrapper(function_sighashes)
         checksum_address = self._web3.toChecksumAddress(contract_address)
         contract_165 = self._web3.eth.contract(address=checksum_address, abi=ERC165_ABI)
         support_interface_721 = (
             c.implements("supportsInterface(bytes4)")
-            and contract_165.functions.supportsInterface(ERC721_INTERFACE).call()
+            and contract_165.functions.supportsInterface(ERC721_INTERFACE).call(block_identifier=block_number)
         )
 
         return support_interface_721 or (
@@ -115,13 +115,13 @@ class KlaytnContractService:
 
     # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md
     # https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC1155/ERC1155.sol
-    def is_erc1155_contract(self, contract_address, function_sighashes):
+    def is_erc1155_contract(self, contract_address, function_sighashes, block_number='latest'):
         c = ContractWrapper(function_sighashes)
         checksum_address = self._web3.toChecksumAddress(contract_address)
         contract_165 = self._web3.eth.contract(address=checksum_address, abi=ERC165_ABI)
         support_interface_1155 = (
             c.implements("supportsInterface(bytes4)")
-            and contract_165.functions.supportsInterface(ERC1155_INTERFACE).call()
+            and contract_165.functions.supportsInterface(ERC1155_INTERFACE).call(block_identifier=block_number)
         )
 
         return support_interface_1155 or (

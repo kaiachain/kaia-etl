@@ -162,13 +162,13 @@ class KlaytnRawContract(BaseDomain):
         )
 
         contract.is_erc20 = contract_service.is_erc20_contract(
-            contract.address, contract.function_sighashes
+            contract.address, contract.function_sighashes, trace.block_number
         )
         contract.is_erc721 = contract_service.is_erc721_contract(
-            contract.address, contract.function_sighashes
+            contract.address, contract.function_sighashes, trace.block_number
         )
         contract.is_erc1155 = contract_service.is_erc1155_contract(
-            contract.address, contract.function_sighashes
+            contract.address, contract.function_sighashes, trace.block_number
         )
         contract.block_number = trace.block_number
 
