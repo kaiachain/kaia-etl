@@ -69,10 +69,10 @@ class KlaytnTokenService(object):
         total_supply = self._get_first_result(contract.functions.totalSupply())
 
         return {
-            'symbol': symbol,
-            'name': name,
-            'decimals': decimals,
-            'total_supply': total_supply
+            "symbol": symbol,
+            "name": name,
+            "decimals": decimals,
+            "total_supply": total_supply,
         }
 
     def get_token(self, token_address) -> KlaytnToken:
@@ -127,7 +127,12 @@ class KlaytnTokenService(object):
         # OverflowError exception happens if the return type of the function doesn't match the expected type
         result = call_contract_function(
             func=func,
-            ignore_errors=(BadFunctionCallOutput, OverflowError, ValueError, ContractLogicError),
+            ignore_errors=(
+                BadFunctionCallOutput,
+                OverflowError,
+                ValueError,
+                ContractLogicError,
+            ),
             default_value=None,
         )
 

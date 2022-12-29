@@ -25,6 +25,7 @@
 import pytest
 
 import tests.resources
+from klaytnetl.web3_utils import build_web3
 from klaytnetl.jobs.export_contracts_job import ExportContractsJob
 from klaytnetl.jobs.exporters.contracts_item_exporter import contracts_item_exporter
 from klaytnetl.thread_local_proxy import ThreadLocalProxy
@@ -60,7 +61,6 @@ ERC1155_CONTRACT_ADDRESSES_UNDER_TEST = [
 @pytest.mark.parametrize(
     "batch_size,contract_addresses,output_format,resource_group,web3_provider_type",
     [
-        (1, ERC721_CONTRACT_ADDRESSES_UNDER_TEST, "json", "erc721_contract", "mock"),
         skip_if_slow_tests_disabled(
             (1, ERC721_CONTRACT_ADDRESSES_UNDER_TEST, "json", "erc721_contract", "fantrie")
         ),
@@ -87,6 +87,13 @@ def test_export_contracts_job(
                 web3_provider_type,
                 lambda file: read_resource(resource_group, file),
                 batch=True,
+            )
+        ),
+        web3=ThreadLocalProxy(
+            lambda: build_web3(
+                get_web3_provider(
+                    web3_provider_type, lambda file: read_resource(resource_group, file)
+                )
             )
         ),
         max_workers=5,
