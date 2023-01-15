@@ -97,7 +97,14 @@ class KlaytnBlockMapper(BaseMapper, EnrichableMixin):
         )
 
         # Klaytn additional properties
-        _block.block_score = hex_to_dec(json_dict.get("blockscore"))
+        # blockscore has been updated to blockScore. This will be updated when Cypress has changed its value too.
+        try:
+            block_score_value = json_dict["blockscore"]
+        except KeyError:
+            block_score_value = json_dict["blockScore"]
+
+        _block.block_score = hex_to_dec(block_score_value)
+
         _block.total_block_score = hex_to_dec(json_dict.get("totalBlockScore"))
 
         _block.governance_data = json_dict.get("governanceData")
