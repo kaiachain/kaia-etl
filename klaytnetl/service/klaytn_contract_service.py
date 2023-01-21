@@ -23,6 +23,7 @@
 
 
 from eth_utils import function_signature_to_4byte_selector
+from web3.exceptions import ContractLogicError
 
 from ethereum_dasm.evmdasm import EvmCode, Contract
 from klaytnetl.erc165_abi import ERC165_ABI
@@ -66,15 +67,23 @@ class KlaytnContractService:
         else:
             return []
 
+    def contract_interface_support(self, contract_address, block_number, interface):
+        checksum_address = self._web3.toChecksumAddress(contract_address)
+        contract_165 = self._web3.eth.contract(address=checksum_address, abi=ERC165_ABI)
+        try:
+            contract_interface_support = contract_165.functions.supportsInterface(interface) \
+                .call(block_identifier=block_number)
+        except ContractLogicError:
+            contract_interface_support = False
+        return contract_interface_support
+
     # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
     # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC20/ERC20.sol
     def is_erc20_contract(self, contract_address, function_sighashes, block_number='latest'):
         c = ContractWrapper(function_sighashes)
-        checksum_address = self._web3.toChecksumAddress(contract_address)
-        contract_165 = self._web3.eth.contract(address=checksum_address, abi=ERC165_ABI)
         support_interface_20 = (
             c.implements("supportsInterface(bytes4)")
-            and contract_165.functions.supportsInterface(ERC20_INTERFACE).call(block_identifier=block_number)
+            and self.contract_interface_support(contract_address, block_number, ERC20_INTERFACE)
         )
 
         return support_interface_20 or (
@@ -97,11 +106,9 @@ class KlaytnContractService:
     # safeTransferFrom(address,address,uint256,bytes)
     def is_erc721_contract(self, contract_address, function_sighashes, block_number='latest'):
         c = ContractWrapper(function_sighashes)
-        checksum_address = self._web3.toChecksumAddress(contract_address)
-        contract_165 = self._web3.eth.contract(address=checksum_address, abi=ERC165_ABI)
         support_interface_721 = (
-            c.implements("supportsInterface(bytes4)")
-            and contract_165.functions.supportsInterface(ERC721_INTERFACE).call(block_identifier=block_number)
+                c.implements("supportsInterface(bytes4)")
+                and self.contract_interface_support(contract_address, block_number, ERC721_INTERFACE)
         )
 
         return support_interface_721 or (
@@ -117,11 +124,9 @@ class KlaytnContractService:
     # https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC1155/ERC1155.sol
     def is_erc1155_contract(self, contract_address, function_sighashes, block_number='latest'):
         c = ContractWrapper(function_sighashes)
-        checksum_address = self._web3.toChecksumAddress(contract_address)
-        contract_165 = self._web3.eth.contract(address=checksum_address, abi=ERC165_ABI)
         support_interface_1155 = (
-            c.implements("supportsInterface(bytes4)")
-            and contract_165.functions.supportsInterface(ERC1155_INTERFACE).call(block_identifier=block_number)
+                c.implements("supportsInterface(bytes4)")
+                and self.contract_interface_support(contract_address, block_number, ERC1155_INTERFACE)
         )
 
         return support_interface_1155 or (
