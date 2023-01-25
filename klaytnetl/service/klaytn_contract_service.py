@@ -23,7 +23,7 @@
 
 
 from eth_utils import function_signature_to_4byte_selector
-from web3.exceptions import ContractLogicError
+from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 
 from ethereum_dasm.evmdasm import EvmCode, Contract
 from klaytnetl.erc165_abi import ERC165_ABI
@@ -73,7 +73,7 @@ class KlaytnContractService:
         try:
             contract_interface_support = contract_165.functions.supportsInterface(interface) \
                 .call(block_identifier=block_number)
-        except ContractLogicError:
+        except (BadFunctionCallOutput, ContractLogicError) :
             contract_interface_support = False
         return contract_interface_support
 
