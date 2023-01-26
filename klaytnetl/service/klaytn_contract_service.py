@@ -73,7 +73,7 @@ class KlaytnContractService:
         try:
             contract_interface_support = contract_165.functions.supportsInterface(interface) \
                 .call(block_identifier=block_number)
-        except (BadFunctionCallOutput, ContractLogicError) :
+        except (BadFunctionCallOutput, ContractLogicError, ValueError):
             contract_interface_support = False
         return contract_interface_support
 
