@@ -5,7 +5,7 @@ This is a fork of [Ethereum ETL](https://github.com/blockchain-etl/ethereum-etl)
 
 [Full documentation available here](http://klaytn-etl.readthedocs.io/).
 
-***Notice: Klaytn ETL is still on the beta version. However, CLIs are all functional.***
+***Notice: Klaytn ETL is no longer the beta version. However, CLIs are all functional.***
 
 ## Quickstart
 Install Klaytn ETL:
