@@ -29,7 +29,7 @@ import shutil
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-from klaytnetl.jobs.export_trace_group_job import ExportTraceGroupJob
+from klaytnetl.jobs.export_trace_group_kafka_job import ExportTraceGroupKafkaJob
 from klaytnetl.jobs.exporters.raw_trace_group_item_exporter import (
     raw_trace_group_item_exporter,
 )
@@ -112,7 +112,7 @@ logging_basic_config()
     "--s3-bucket", default=None, type=str, help="S3 bucket for syncing export data."
 )
 @click.option(
-    "--gcs-bucket", default=None, type=str, help="GCS bucket for syncing export data."
+    "--gcs-bucket", default=None, type=str, help="GCS bucket prefix for syncing export data."
 )
 @click.option(
     "--file-format",
@@ -223,7 +223,7 @@ def export_trace_group_kafka(
             **exporter_options
         )
 
-    job = ExportTraceGroupJob(
+    job = ExportTraceGroupKafkaJob(
         start_block=start_block,
         end_block=end_block,
         batch_size=batch_size,
