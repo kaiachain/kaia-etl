@@ -29,6 +29,7 @@ from klaytnetl.cli.export_blocks_and_transactions import export_blocks_and_trans
 
 from klaytnetl.cli.export_block_group import export_block_group
 from klaytnetl.cli.export_trace_group import export_trace_group
+from klaytnetl.cli.export_trace_group_kafka import export_trace_group_kafka
 
 from klaytnetl.cli.export_contracts import export_contracts
 from klaytnetl.cli.export_receipts_and_logs import export_receipts_and_logs
@@ -68,6 +69,7 @@ cli.add_command(extract_tokens, "extract_tokens")
 
 cli.add_command(export_block_group, "export_block_group")
 cli.add_command(export_trace_group, "export_trace_group")
+cli.add_command(export_trace_group_kafka, "export_trace_group_kafka")
 
 # utils
 cli.add_command(get_block_range_for_date, "get_block_range_for_date")
