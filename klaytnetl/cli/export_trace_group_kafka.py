@@ -29,7 +29,6 @@ import shutil
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-from klaytnetl.jobs.export_trace_group_kafka_job import ExportTraceGroupKafkaJob
 from klaytnetl.jobs.exporters.raw_trace_group_item_exporter import (
     raw_trace_group_item_exporter,
 )
@@ -200,64 +199,51 @@ def export_trace_group_kafka(
         "file_maxlines": file_maxlines,
         "compress": compress,
     }
+    
+    while True:
+        # s3 export
+        if s3_bucket or gcs_bucket:
+            tmpdir = tempfile.mkdtemp()
+        else:
+            tmpdir = None
 
-    # s3 export
-    if s3_bucket or gcs_bucket:
-        tmpdir = tempfile.mkdtemp()
-    else:
-        tmpdir = None
+        # enrich option
+        if enrich:
+            exporter = enrich_trace_group_item_exporter(
+                get_path(tmpdir, traces_output),
+                get_path(tmpdir, contracts_output),
+                get_path(tmpdir, tokens_output),
+                **exporter_options
+            )
+        else:
+            exporter = raw_trace_group_item_exporter(
+                get_path(tmpdir, traces_output),
+                get_path(tmpdir, contracts_output),
+                get_path(tmpdir, tokens_output),
+                **exporter_options
+            )
+            
+        # poll Kafka and collect an hour worth data
 
-    # enrich option
-    if enrich:
-        exporter = enrich_trace_group_item_exporter(
-            get_path(tmpdir, traces_output),
-            get_path(tmpdir, contracts_output),
-            get_path(tmpdir, tokens_output),
-            **exporter_options
-        )
-    else:
-        exporter = raw_trace_group_item_exporter(
-            get_path(tmpdir, traces_output),
-            get_path(tmpdir, contracts_output),
-            get_path(tmpdir, tokens_output),
-            **exporter_options
-        )
+        # export the collected data
 
-    job = ExportTraceGroupKafkaJob(
-        start_block=start_block,
-        end_block=end_block,
-        batch_size=batch_size,
-        batch_web3_provider=ThreadLocalProxy(
-            lambda: get_provider_from_uri(provider_uri, timeout=timeout, batch=True)
-        ),
-        web3=ThreadLocalProxy(lambda: web3),
-        max_workers=max_workers,
-        enrich=enrich,
-        item_exporter=exporter,
-        log_percentage_step=log_percentage_step,
-        detailed_trace_log=detailed_trace_log,
-        export_traces=traces_output is not None,
-        export_contracts=contracts_output is not None,
-        export_tokens=tokens_output is not None,
-    )
 
-    job.run()
+        if tmpdir:
+            if s3_bucket:
+                sync_to_s3(
+                    s3_bucket,
+                    tmpdir,
+                    {traces_output, contracts_output, tokens_output},
+                    file_maxlines is None,
+                )
+                shutil.rmtree(tmpdir, ignore_errors=True)
 
-    if s3_bucket:
-        sync_to_s3(
-            s3_bucket,
-            tmpdir,
-            {traces_output, contracts_output, tokens_output},
-            file_maxlines is None,
-        )
-        shutil.rmtree(tmpdir, ignore_errors=True)
-
-    if gcs_bucket:
-        sync_to_gcs(
-            gcs_bucket,
-            tmpdir,
-            {traces_output, contracts_output, tokens_output},
-            file_maxlines is None,
-        )
-        shutil.rmtree(tmpdir, ignore_errors=True)
+            if gcs_bucket:
+                sync_to_gcs(
+                    gcs_bucket,
+                    tmpdir,
+                    {traces_output, contracts_output, tokens_output},
+                    file_maxlines is None,
+                )
+                shutil.rmtree(tmpdir, ignore_errors=True)
 
