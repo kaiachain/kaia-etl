@@ -29,6 +29,7 @@ import shutil
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
+from klaytnetl.jobs.export_trace_group_kafka_job import ExportTraceGroupKafkaJob
 from klaytnetl.jobs.exporters.raw_trace_group_item_exporter import (
     raw_trace_group_item_exporter,
 )
@@ -87,6 +88,14 @@ logging_basic_config()
 @click.option(
     "-p",
     "--provider-uri",
+    default="https://cypress.fandom.finance/archive",
+    show_default=True,
+    type=str,
+    help="The URI of the web3 provider e.g. "
+    "file://$HOME/var/kend/data/klay.ipc or https://cypress.fandom.finance/archive",
+)
+@click.option(
+    "--kafka-uri",
     default=None,
     show_default=True,
     type=str,
@@ -111,7 +120,10 @@ logging_basic_config()
     "--s3-bucket", default=None, type=str, help="S3 bucket for syncing export data."
 )
 @click.option(
-    "--gcs-bucket", default=None, type=str, help="GCS bucket prefix for syncing export data."
+    "--gcs-bucket",
+    default=None,
+    type=str,
+    help="GCS bucket prefix for syncing export data.",
 )
 @click.option(
     "--file-format",
@@ -136,7 +148,7 @@ logging_basic_config()
     "--detailed-trace-log",
     is_flag=True,
     type=bool,
-    help="Detailed log option for trace count. If not provided, the option will be disabled."
+    help="Detailed log option for trace count. If not provided, the option will be disabled.",
 )
 @click.option(
     "--network",
@@ -149,7 +161,7 @@ logging_basic_config()
     "--log-percentage-step",
     default=10,
     type=int,
-    help="How often to show log percentage step"
+    help="How often to show log percentage step",
 )
 def export_trace_group_kafka(
     start_block,
@@ -160,6 +172,7 @@ def export_trace_group_kafka(
     tokens_output,
     max_workers,
     provider_uri,
+    kafka_uri,
     timeout,
     enrich,
     s3_bucket,
@@ -184,9 +197,7 @@ def export_trace_group_kafka(
         )
 
     if s3_bucket and gcs_bucket:
-        raise ValueError(
-            "Only one export option is allowed - S3 or GCS"
-        )
+        raise ValueError("Only one export option is allowed - S3 or GCS")
 
     if file_format not in {"json", "csv"}:
         raise ValueError('"--file-format" option only supports "json" or "csv".')
@@ -199,7 +210,7 @@ def export_trace_group_kafka(
         "file_maxlines": file_maxlines,
         "compress": compress,
     }
-    
+
     while True:
         # s3 export
         if s3_bucket or gcs_bucket:
@@ -222,11 +233,26 @@ def export_trace_group_kafka(
                 get_path(tmpdir, tokens_output),
                 **exporter_options
             )
-            
-        # poll Kafka and collect an hour worth data
 
-        # export the collected data
+        job = ExportTraceGroupKafkaJob(
+            start_block=start_block,
+            end_block=end_block,
+            batch_size=batch_size,
+            batch_web3_provider=ThreadLocalProxy(
+                lambda: get_provider_from_uri(provider_uri, timeout=timeout, batch=True)
+            ),
+            web3=ThreadLocalProxy(lambda: web3),
+            max_workers=max_workers,
+            enrich=enrich,
+            item_exporter=exporter,
+            log_percentage_step=log_percentage_step,
+            detailed_trace_log=detailed_trace_log,
+            export_traces=traces_output is not None,
+            export_contracts=contracts_output is not None,
+            export_tokens=tokens_output is not None,
+        )
 
+        job.run()
 
         if tmpdir:
             if s3_bucket:
@@ -246,4 +272,3 @@ def export_trace_group_kafka(
                     file_maxlines is None,
                 )
                 shutil.rmtree(tmpdir, ignore_errors=True)
-
