@@ -50,8 +50,17 @@ from klaytnetl.service.klaytn_token_service import KlaytnTokenService
 
 from klaytnetl.utils import hex_to_dec, is_contract_creation_trace
 
+from klaytnetl.service.segment import Segment, insert_segment, handle_buffered_messages
 
-# Exports trace block
+from confluent_kafka import (
+    Consumer,
+    TopicPartition,
+)
+    
+from typing import List
+import struct
+
+# Exports trace block from kafka
 class ExportTraceGroupKafkaJob(BaseJob):
     def __init__(
         self,
@@ -63,6 +72,9 @@ class ExportTraceGroupKafkaJob(BaseJob):
         max_workers,
         enrich,
         item_exporter,
+        kafka_bootstrap_servers,
+        kafka_group_id,
+        kafka_topic,
         log_percentage_step=10,
         detailed_trace_log=False,
         export_traces=True,
@@ -96,6 +108,7 @@ class ExportTraceGroupKafkaJob(BaseJob):
             )
 
         self.web3 = web3
+        self.consumer = self._new_kafka_consumer(kafka_bootstrap_servers, kafka_group_id, kafka_topic)
 
         self._init_mapper(
             **{
@@ -105,6 +118,16 @@ class ExportTraceGroupKafkaJob(BaseJob):
             }
         )
 
+    def _new_kafka_consumer(self, bootstrap_servers, group_id, topic, partition = 0, offset = 0):
+        consumer = Consumer({
+            "bootstrap.servers": bootstrap_servers,
+            "group.id": group_id,
+            "auto.offset.reset": "earliest",
+            "enable.auto.commit": False,
+        })
+        consumer.assign([TopicPartition(topic, partition, offset)])
+        return consumer
+        
     def _init_mapper(self, export_traces, export_contracts, export_tokens):
         # mapper options
         self._require_trace = True
@@ -145,7 +168,7 @@ class ExportTraceGroupKafkaJob(BaseJob):
             total_items=self.end_block - self.start_block + 1,
         )
 
-    def _export_batch(self, block_number_batch):
+    def _export_batch(self, block_number_batch: List[int]):
         # export blocks and transactions
         blocks_rpc = list(
             generate_get_block_with_receipt_by_number_json_rpc(block_number_batch)
@@ -170,36 +193,9 @@ class ExportTraceGroupKafkaJob(BaseJob):
         blocks_map = {}
         for block in blocks:
             blocks_map[block["block_number"]] = block
-
+        
         ###### TODO: implement Kafka poll until all blocks are filled, then fill `trace_blocks`
-        # export trace blocks
-        trace_blocks_rpc = list(
-            generate_trace_block_by_number_json_rpc(block_number_batch)
-        )
-
-        # divide requests to small number of requests
-        num = 0
-        trace_blocks = []
-        while num < len(trace_blocks_rpc):
-            chunk = trace_blocks_rpc[num : num + 20]
-            num = num + 20
-            trace_blocks_response = self.batch_web3_provider.make_batch_request(
-                json.dumps(chunk)
-            )
-            trace_blocks_chunk = map(
-                lambda res: {
-                    "block_number": res.get("id"),
-                    "transaction_traces": [
-                        tx_trace.get("result")
-                        for tx_trace in rpc_response_to_result(res)
-                    ],
-                },
-                trace_blocks_response,
-            )
-            trace_blocks_chunk = filter(
-                lambda ntr: len(ntr.get("transaction_traces")) > 0, trace_blocks_chunk
-            )
-            trace_blocks.extend(trace_blocks_chunk)
+        trace_blocks = self._get_traces_from_kafka(block_number_batch)
 
         trace_count = 0
         for raw_trace_block in trace_blocks:
@@ -253,6 +249,55 @@ class ExportTraceGroupKafkaJob(BaseJob):
                                 self.token_mapper.token_to_dict(token)
                             )
         return trace_count
+
+    # pools until all blocks are filled
+    def _get_traces_from_kafka(self, block_number_batch):
+        buffer: List[List[Segment]] = []
+        trace_blocks = []
+        assembled_data_cnt = 0
+        while len(block_number_batch) != assembled_data_cnt:
+            msg = self.consumer.poll(timeout=5.0)
+            if msg is None:
+                continue
+            if msg.error():
+                raise Exception(f"Kafka consumer error: {msg.error()}")
+            
+            headers = dict(msg.headers())
+            totalSegments: int = struct.unpack(">Q", headers["totalSegments"])[0]
+            segmentIdx: int = struct.unpack(">Q", headers["segmentIdx"])[0]
+            segment = Segment(
+                int(msg.key().decode("ascii")),
+                msg.value(),
+                totalSegments,
+                segmentIdx,
+                headers["producerId"].decode("ascii"),
+            )
+            
+            # assemble segments (application level protocol)
+            buffer = insert_segment(segment, buffer)
+            assembled_data_list = handle_buffered_messages(buffer)
+            for assembled_data in assembled_data_list:
+                trace_json: dict = json.loads(assembled_data.trace)
+                assert trace_json["blockNumber"] == assembled_data.block_number
+                assert isinstance(trace_json, dict)
+
+                assembled_data_cnt+=1
+                trace_blocks_chunk = map(
+                    lambda res: {
+                        "block_number": res.get("id"),
+                        "transaction_traces": [
+                            tx_trace.get("result")
+                            for tx_trace in rpc_response_to_result(res)
+                        ],
+                    },
+                    trace_json,
+                )
+                trace_blocks_chunk = filter(
+                    lambda ntr: len(ntr.get("transaction_traces")) > 0, trace_blocks_chunk
+                )
+                trace_blocks.extend(trace_blocks_chunk)
+
+        return trace_blocks
 
     def _end(self):
         self.batch_work_executor.shutdown()

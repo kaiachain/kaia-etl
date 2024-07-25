@@ -102,6 +102,16 @@ logging_basic_config()
     help="The URI of Kafka",
 )
 @click.option(
+    "--kafka-group-id",
+    type=str,
+    help="The group id of Kafka",
+)
+@click.option(
+    "--kafka-topic",
+    type=str,
+    help="The topic of Kafka",
+)
+@click.option(
     "-t",
     "--timeout",
     default=60,
@@ -173,6 +183,8 @@ def export_trace_group_kafka(
     max_workers,
     provider_uri,
     kafka_uri,
+    kafka_group_id,
+    kafka_topic,
     timeout,
     enrich,
     s3_bucket,
@@ -184,7 +196,7 @@ def export_trace_group_kafka(
     network,
     log_percentage_step,
 ):
-    """Exports traces group from Klaytn node."""
+    """Exports traces group from chaindatafetcher kafka."""
     if network:
         provider_uri = return_provider(network)
 
@@ -243,6 +255,9 @@ def export_trace_group_kafka(
             ),
             web3=ThreadLocalProxy(lambda: web3),
             max_workers=max_workers,
+            kafka_bootstrap_servers=kafka_uri,
+            kafka_group_id=kafka_group_id,
+            kafka_topic=kafka_topic,
             enrich=enrich,
             item_exporter=exporter,
             log_percentage_step=log_percentage_step,
