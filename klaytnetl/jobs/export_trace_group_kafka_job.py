@@ -57,7 +57,6 @@ from confluent_kafka import (
     TopicPartition,
 )
     
-from typing import List
 import struct
 
 # Exports trace block from kafka
@@ -168,7 +167,7 @@ class ExportTraceGroupKafkaJob(BaseJob):
             total_items=self.end_block - self.start_block + 1,
         )
 
-    def _export_batch(self, block_number_batch: List[int]):
+    def _export_batch(self, block_number_batch: list[int]):
         # export blocks and transactions
         blocks_rpc = list(
             generate_get_block_with_receipt_by_number_json_rpc(block_number_batch)
@@ -200,6 +199,7 @@ class ExportTraceGroupKafkaJob(BaseJob):
         trace_count = 0
         for raw_trace_block in trace_blocks:
             block_number = raw_trace_block.get("block_number")
+            print(block_number)
             block = blocks_map.get(block_number)
             trace_block: KlaytnTraceBlock = (
                 self.trace_block_mapper.json_dict_to_trace_block(
@@ -251,8 +251,8 @@ class ExportTraceGroupKafkaJob(BaseJob):
         return trace_count
 
     # pools until all blocks are filled
-    def _get_traces_from_kafka(self, block_number_batch):
-        buffer: List[List[Segment]] = []
+    def _get_traces_from_kafka(self, block_number_batch: list[int]):
+        buffer: list[list[Segment]] = []
         trace_blocks = []
         assembled_data_cnt = 0
         while len(block_number_batch) != assembled_data_cnt:
@@ -282,16 +282,13 @@ class ExportTraceGroupKafkaJob(BaseJob):
                 assert isinstance(trace_json, dict)
 
                 assembled_data_cnt+=1
-                trace_blocks_chunk = map(
-                    lambda res: {
-                        "block_number": res.get("id"),
-                        "transaction_traces": [
-                            tx_trace.get("result")
-                            for tx_trace in rpc_response_to_result(res)
-                        ],
-                    },
-                    trace_json,
-                )
+                trace_blocks_chunk = [
+                    {
+                        "block_number": trace_json["blockNumber"],
+                        "transaction_traces": trace_json["result"],
+                    }
+                ]
+
                 trace_blocks_chunk = filter(
                     lambda ntr: len(ntr.get("transaction_traces")) > 0, trace_blocks_chunk
                 )

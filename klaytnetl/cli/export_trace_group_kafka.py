@@ -103,11 +103,13 @@ logging_basic_config()
 )
 @click.option(
     "--kafka-group-id",
+    default=None,
     type=str,
     help="The group id of Kafka",
 )
 @click.option(
     "--kafka-topic",
+    default=None,
     type=str,
     help="The topic of Kafka",
 )
@@ -213,6 +215,9 @@ def export_trace_group_kafka(
 
     if file_format not in {"json", "csv"}:
         raise ValueError('"--file-format" option only supports "json" or "csv".')
+
+    if not kafka_uri or not kafka_topic or not kafka_group_id:
+        raise ValueError('"--kafka-uri", "--kafka-topic", and "--kafka-group-id" options must be provided.')
 
     if isinstance(file_maxlines, int) and file_maxlines <= 0:
         file_maxlines = None

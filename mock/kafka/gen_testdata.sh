@@ -9,5 +9,6 @@ fi
 
 for block in $(seq 154474144 154474164); do
     echo "Tracing block $block..."
-    cast rpc debug_traceBlockByNumber $block '{"tracer":"fastCallTracer"}' -r $CYPRESS_RPC_URL > testdata_$block.json
+    CAST_OUTPUT=$(cast rpc debug_traceBlockByNumber $block '{"tracer":"fastCallTracer"}' -r $CYPRESS_RPC_URL)
+    echo "{\"blockNumber\":$block,\"result\":$CAST_OUTPUT }" > testdata_$block.json
 done

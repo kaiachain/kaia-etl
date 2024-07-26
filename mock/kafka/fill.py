@@ -56,7 +56,7 @@ def main():
         testdata_path = f"testdata_{i}.json"
         read_file_and_send_to_kafka(testdata_path, kafka_topic, kafka_servers)
 
-    longdata = "testdata_9999999999.json"
+    longdata = "testdata_12345.json"
     if os.path.exists(longdata):
         read_file_and_send_to_kafka(longdata, kafka_topic, kafka_servers)
 
