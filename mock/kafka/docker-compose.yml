@@ -21,14 +21,14 @@ services:
       KAFKA_JMX_HOSTNAME: ${DOCKER_HOST_IP:-127.0.0.1}
       KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_MESSAGE_MAX_BYTES: 1048576
+      KAFKA_MAX_REQUEST_SIZE: 1048576
     depends_on:
       - zoo1
     networks:
       app_net:
         ipv4_address: 172.16.239.14
     restart: "no"
-    volumes:
-      - ./kafka-data:/var/lib/kafka/data
   zoo1:
     image: confluentinc/cp-zookeeper:7.3.2
     hostname: zoo1
@@ -42,9 +42,6 @@ services:
     networks:
       app_net:
         ipv4_address: 172.16.239.15
-    volumes:
-      - ./zk-data:/var/lib/zookeeper/data
-      - ./zk-txn-logs:/var/lib/zookeeper/log
 
 networks:
   app_net:
