@@ -23,12 +23,14 @@
 
 
 import click
+import datetime
 import tempfile
 import shutil
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
+from klaytnetl.service.klaytn_service import KlaytnService
 from klaytnetl.jobs.export_trace_group_kafka_job import ExportTraceGroupKafkaJob
 from klaytnetl.jobs.exporters.raw_trace_group_item_exporter import (
     raw_trace_group_item_exporter,
@@ -106,6 +108,18 @@ logging_basic_config()
     help="The topic of Kafka",
 )
 @click.option(
+    "--kafka-partition",
+    default=0,
+    type=int,
+    help="The partition of Kafka",
+)
+@click.option(
+    "--kafka-offset",
+    default=0,
+    type=int,
+    help="The offset of Kafka",
+)
+@click.option(
     "-t",
     "--timeout",
     default=60,
@@ -178,6 +192,8 @@ def export_trace_group_kafka(
     kafka_uri,
     kafka_group_id,
     kafka_topic,
+    kafka_partition,
+    kafka_offset,
     timeout,
     enrich,
     s3_bucket,
@@ -195,6 +211,8 @@ def export_trace_group_kafka(
 
     web3 = Web3(get_provider_from_uri(provider_uri))
     web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    
+    klaytn_service = KlaytnService(web3)
 
     if traces_output is None and contracts_output is None and tokens_output is None:
         raise ValueError(
@@ -219,10 +237,21 @@ def export_trace_group_kafka(
         "compress": compress,
     }
     
-    last_offset = 0
-    last_partition = 0
-    for start in range(start_block, end_block + 1, batch_size):
-        end = min(start + batch_size - 1, end_block)
+    last_offset = kafka_offset
+    last_partition = kafka_partition
+
+    start_timestamp = web3.eth.get_block(start_block).get("timestamp")
+    if start_timestamp is None:
+        raise ValueError("Failed to get start timestamp")
+
+    start_timestamp = (start_timestamp // 3600) * 3600  # Round down to nearest hour
+    end_timestamp = start_timestamp + 3600  # Add 1 hour (3600 seconds)
+    while True:
+        start, end = klaytn_service.get_block_range_for_timestamps(start_timestamp, end_timestamp)
+        end = min(end, end_block)
+        print("Exporting blocks from", start, "to", end)
+        start_timestamp = end_timestamp
+        end_timestamp = start_timestamp + 3600
     
         # s3 export
         if s3_bucket or gcs_bucket:
@@ -232,12 +261,12 @@ def export_trace_group_kafka(
 
         if enrich:
             exporter = enrich_trace_group_item_exporter(
-                traces_output=get_path(tmpdir, traces_output + f"/traces_{start}_{end}"),
+                traces_output=get_path(tmpdir, traces_output + f"/{datetime.datetime.fromtimestamp(start_timestamp).strftime('%Y-%m-%d/%H')}"),
                 **exporter_options
             )
         else:
             exporter = raw_trace_group_item_exporter(
-                traces_output=get_path(tmpdir, traces_output + f"/traces_{start}_{end}"),
+                traces_output=get_path(tmpdir, traces_output + f"/{datetime.datetime.fromtimestamp(start_timestamp).strftime('%Y-%m-%d/%H')}"),
                 **exporter_options
             )
 
@@ -252,6 +281,8 @@ def export_trace_group_kafka(
             kafka_bootstrap_servers=kafka_uri,
             kafka_group_id=kafka_group_id,
             kafka_topic=kafka_topic,
+            kafka_partition = last_partition,
+            kafka_offset = last_offset,
             enrich=enrich,
             item_exporter=exporter,
             log_percentage_step=log_percentage_step,
@@ -259,8 +290,6 @@ def export_trace_group_kafka(
             export_traces=traces_output is not None,
             export_contracts=contracts_output is not None,
             export_tokens=tokens_output is not None,
-            offset = last_offset,
-            partition = last_partition,
         )
 
         job.run()
@@ -286,3 +315,6 @@ def export_trace_group_kafka(
                     file_maxlines is None,
                 )
                 shutil.rmtree(tmpdir, ignore_errors=True)
+
+        if end == end_block:
+            break

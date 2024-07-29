@@ -73,13 +73,13 @@ class ExportTraceGroupKafkaJob(BaseJob):
         kafka_bootstrap_servers,
         kafka_group_id,
         kafka_topic,
+        kafka_partition = 0,
+        kafka_offset = 0,
         log_percentage_step=10,
         detailed_trace_log=False,
         export_traces=True,
         export_contracts=True,
         export_tokens=True,
-        partition = 0,
-        offset = 0,
     ):
         validate_range(start_block, end_block)
         self.start_block = start_block
@@ -96,8 +96,8 @@ class ExportTraceGroupKafkaJob(BaseJob):
         self.export_contracts = export_contracts
         self.export_tokens = export_tokens
 
-        self.partition = partition
-        self.offset = offset
+        self.partition = kafka_partition
+        self.offset = kafka_offset
 
         self.enrich = enrich
 
@@ -164,15 +164,15 @@ class ExportTraceGroupKafkaJob(BaseJob):
         self.item_exporter.open()
 
     def _export(self):
-        for start in range(self.start_block, self.end_block + 1, 10):
-            end = min(start + 9, self.end_block)
-            print("exporting blocks", start, "to", end)
-            self._execute(list(range(start, end + 1)))
+        self._execute()
 
-    def _execute(self, block_number_batch: list[int]):
+    # get traces from kafka, get receipts for those blocks, and export
+    def _execute(self):
+        trace_blocks = self._get_traces_from_kafka()
+
         # export blocks and transactions
         blocks_rpc = list(
-            generate_get_block_with_receipt_by_number_json_rpc(block_number_batch)
+            generate_get_block_with_receipt_by_number_json_rpc(list(map(lambda ntr: ntr["block_number"], trace_blocks)))
         )
         blocks_response = self.batch_web3_provider.make_batch_request(
             json.dumps(blocks_rpc)
@@ -195,7 +195,6 @@ class ExportTraceGroupKafkaJob(BaseJob):
         for block in blocks:
             blocks_map[block["block_number"]] = block
         
-        trace_blocks = self._get_traces_from_kafka(block_number_batch)
         trace_count = 0
         for raw_trace_block in trace_blocks:
             block_number = raw_trace_block.get("block_number")
@@ -250,19 +249,23 @@ class ExportTraceGroupKafkaJob(BaseJob):
         return trace_count
 
     # pools until all blocks are filled
-    def _get_traces_from_kafka(self, block_number_batch: list[int]):
+    def _get_traces_from_kafka(self):
         buffer: list[list[Segment]] = []
         trace_blocks = []
-        while len(block_number_batch) != len(trace_blocks):
+        while True:
             msg = self.consumer.poll(timeout=5.0)
+
+            # if reached Kafka end
             if msg is None:
-                continue
+                # loop more to be inserted to Kafka.
+                max_trace_block = max(map(lambda ntr: ntr["block_number"], trace_blocks))
+                if self.end_block > max_trace_block:
+                    continue
+                else:
+                    return trace_blocks
+
             if msg.error():
                 raise Exception(f"Kafka consumer error: {msg.error()}")
-
-            self.partition = msg.partition()
-            self.offset = msg.offset()
-            print("partition: ", self.partition, "offset: ", self.offset)
             
             headers = dict(msg.headers())
             totalSegments: int = struct.unpack(">Q", headers["totalSegments"])[0]
@@ -280,12 +283,9 @@ class ExportTraceGroupKafkaJob(BaseJob):
             assembled_data_list = handle_buffered_messages(buffer)
             for assembled_data in assembled_data_list:
                 trace_block_obj: dict = json.loads(assembled_data.trace)
-                assert trace_block_obj["blockNumber"] == assembled_data.block_number
-                assert isinstance(trace_block_obj, dict)
-                
-                if trace_block_obj["blockNumber"] not in block_number_batch:
+                if not (self.start_block <= trace_block_obj["blockNumber"] <= self.end_block):
                     continue
-
+                assert isinstance(trace_block_obj, dict)
                 trace_blocks_chunk = [
                     {
                         "block_number": trace_block_obj["blockNumber"],
@@ -297,8 +297,11 @@ class ExportTraceGroupKafkaJob(BaseJob):
                     lambda ntr: len(ntr.get("transaction_traces")) > 0, trace_blocks_chunk
                 )
                 trace_blocks.extend(trace_blocks_chunk)
+                self.partition = msg.partition()
+                self.offset = msg.offset()
 
-        return trace_blocks
+                if trace_block_obj["blockNumber"] >= self.end_block:
+                    return trace_blocks
 
     def _end(self):
         self.batch_work_executor.shutdown()
