@@ -16,7 +16,6 @@ python klaytnetl.py export_trace_group_kafka \
     --kafka-group-id test-consumer1 \
     --enrich True \
     -b 1 \
-    -w 5 \
     -t 180 \
     --compress \
     --file-format json \

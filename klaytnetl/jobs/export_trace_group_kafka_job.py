@@ -59,7 +59,7 @@ from confluent_kafka import (
     
 import struct
 
-# Exports trace block from kafka
+# Exports trace block from kafka. It waits for all blocks between start, end blocks to be collected in the kafka.
 class ExportTraceGroupKafkaJob(BaseJob):
     def __init__(
         self,
@@ -68,7 +68,6 @@ class ExportTraceGroupKafkaJob(BaseJob):
         batch_size,
         batch_web3_provider,
         web3,
-        max_workers,
         enrich,
         item_exporter,
         kafka_bootstrap_servers,
@@ -87,7 +86,7 @@ class ExportTraceGroupKafkaJob(BaseJob):
         self.batch_web3_provider = batch_web3_provider
 
         self.batch_work_executor = BatchWorkExecutor(
-            batch_size, max_workers, log_percentage_step, detailed_trace_log
+            batch_size, 1, log_percentage_step, detailed_trace_log
         )
         self.item_exporter = item_exporter
 
@@ -161,13 +160,12 @@ class ExportTraceGroupKafkaJob(BaseJob):
         self.item_exporter.open()
 
     def _export(self):
-        self.batch_work_executor.execute(
-            range(self.start_block, self.end_block + 1),
-            self._export_batch,
-            total_items=self.end_block - self.start_block + 1,
-        )
+        for start in range(self.start_block, self.end_block + 1, 10):
+            end = min(start + 9, self.end_block)
+            print("exporting blocks", start, "to", end)
+            self._execute(list(range(start, end + 1)))
 
-    def _export_batch(self, block_number_batch: list[int]):
+    def _execute(self, block_number_batch: list[int]):
         # export blocks and transactions
         blocks_rpc = list(
             generate_get_block_with_receipt_by_number_json_rpc(block_number_batch)
@@ -193,13 +191,10 @@ class ExportTraceGroupKafkaJob(BaseJob):
         for block in blocks:
             blocks_map[block["block_number"]] = block
         
-        ###### TODO: implement Kafka poll until all blocks are filled, then fill `trace_blocks`
         trace_blocks = self._get_traces_from_kafka(block_number_batch)
-
         trace_count = 0
         for raw_trace_block in trace_blocks:
             block_number = raw_trace_block.get("block_number")
-            print(block_number)
             block = blocks_map.get(block_number)
             trace_block: KlaytnTraceBlock = (
                 self.trace_block_mapper.json_dict_to_trace_block(
@@ -277,15 +272,15 @@ class ExportTraceGroupKafkaJob(BaseJob):
             buffer = insert_segment(segment, buffer)
             assembled_data_list = handle_buffered_messages(buffer)
             for assembled_data in assembled_data_list:
-                trace_json: dict = json.loads(assembled_data.trace)
-                assert trace_json["blockNumber"] == assembled_data.block_number
-                assert isinstance(trace_json, dict)
+                trace_block_obj: dict = json.loads(assembled_data.trace)
+                assert trace_block_obj["blockNumber"] == assembled_data.block_number
+                assert isinstance(trace_block_obj, dict)
 
                 assembled_data_cnt+=1
                 trace_blocks_chunk = [
                     {
-                        "block_number": trace_json["blockNumber"],
-                        "transaction_traces": trace_json["result"],
+                        "block_number": trace_block_obj["blockNumber"],
+                        "transaction_traces": list(map(lambda tx: tx["result"], trace_block_obj["result"])),
                     }
                 ]
 
