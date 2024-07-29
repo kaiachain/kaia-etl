@@ -14,8 +14,7 @@ python klaytnetl.py export_trace_group_kafka \
     --kafka-uri localhost:9092 \
     --kafka-topic local.klaytn.chaindatafetcher.en-0.tracegroup.v1 \
     --kafka-group-id test-consumer1 \
-    --enrich True \
-    -b 1 \
+    -b 100 \
     -t 180 \
     --compress \
     --file-format json \

@@ -218,66 +218,71 @@ def export_trace_group_kafka(
         "file_maxlines": file_maxlines,
         "compress": compress,
     }
+    
+    last_offset = 0
+    last_partition = 0
+    for start in range(start_block, end_block + 1, batch_size):
+        end = min(start + batch_size - 1, end_block)
+    
+        # s3 export
+        if s3_bucket or gcs_bucket:
+            tmpdir = tempfile.mkdtemp()
+        else:
+            tmpdir = None
 
-    # s3 export
-    if s3_bucket or gcs_bucket:
-        tmpdir = tempfile.mkdtemp()
-    else:
-        tmpdir = None
-
-    # enrich option
-    if enrich:
-        exporter = enrich_trace_group_item_exporter(
-            get_path(tmpdir, traces_output),
-            get_path(tmpdir, contracts_output),
-            get_path(tmpdir, tokens_output),
-            **exporter_options
-        )
-    else:
-        exporter = raw_trace_group_item_exporter(
-            get_path(tmpdir, traces_output),
-            get_path(tmpdir, contracts_output),
-            get_path(tmpdir, tokens_output),
-            **exporter_options
-        )
-
-    job = ExportTraceGroupKafkaJob(
-        start_block=start_block,
-        end_block=end_block,
-        batch_size=batch_size,
-        batch_web3_provider=ThreadLocalProxy(
-            lambda: get_provider_from_uri(provider_uri, timeout=timeout, batch=True)
-        ),
-        web3=ThreadLocalProxy(lambda: web3),
-        kafka_bootstrap_servers=kafka_uri,
-        kafka_group_id=kafka_group_id,
-        kafka_topic=kafka_topic,
-        enrich=enrich,
-        item_exporter=exporter,
-        log_percentage_step=log_percentage_step,
-        detailed_trace_log=detailed_trace_log,
-        export_traces=traces_output is not None,
-        export_contracts=contracts_output is not None,
-        export_tokens=tokens_output is not None,
-    )
-
-    job.run()
-
-    if tmpdir:
-        if s3_bucket:
-            sync_to_s3(
-                s3_bucket,
-                tmpdir,
-                {traces_output, contracts_output, tokens_output},
-                file_maxlines is None,
+        if enrich:
+            exporter = enrich_trace_group_item_exporter(
+                traces_output=get_path(tmpdir, traces_output + f"/traces_{start}_{end}"),
+                **exporter_options
             )
-            shutil.rmtree(tmpdir, ignore_errors=True)
-
-        if gcs_bucket:
-            sync_to_gcs(
-                gcs_bucket,
-                tmpdir,
-                {traces_output, contracts_output, tokens_output},
-                file_maxlines is None,
+        else:
+            exporter = raw_trace_group_item_exporter(
+                traces_output=get_path(tmpdir, traces_output + f"/traces_{start}_{end}"),
+                **exporter_options
             )
-            shutil.rmtree(tmpdir, ignore_errors=True)
+
+        job = ExportTraceGroupKafkaJob(
+            start_block=start,
+            end_block=end,
+            batch_size=batch_size,
+            batch_web3_provider=ThreadLocalProxy(
+                lambda: get_provider_from_uri(provider_uri, timeout=timeout, batch=True)
+            ),
+            web3=ThreadLocalProxy(lambda: web3),
+            kafka_bootstrap_servers=kafka_uri,
+            kafka_group_id=kafka_group_id,
+            kafka_topic=kafka_topic,
+            enrich=enrich,
+            item_exporter=exporter,
+            log_percentage_step=log_percentage_step,
+            detailed_trace_log=detailed_trace_log,
+            export_traces=traces_output is not None,
+            export_contracts=contracts_output is not None,
+            export_tokens=tokens_output is not None,
+            offset = last_offset,
+            partition = last_partition,
+        )
+
+        job.run()
+
+        last_offset = job.offset
+        last_partition = job.partition
+
+        if tmpdir:
+            if s3_bucket:
+                sync_to_s3(
+                    s3_bucket,
+                    tmpdir,
+                    {traces_output, contracts_output, tokens_output},
+                    file_maxlines is None,
+                )
+                shutil.rmtree(tmpdir, ignore_errors=True)
+
+            if gcs_bucket:
+                sync_to_gcs(
+                    gcs_bucket,
+                    tmpdir,
+                    {traces_output, contracts_output, tokens_output},
+                    file_maxlines is None,
+                )
+                shutil.rmtree(tmpdir, ignore_errors=True)

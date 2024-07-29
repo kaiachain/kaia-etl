@@ -78,6 +78,8 @@ class ExportTraceGroupKafkaJob(BaseJob):
         export_traces=True,
         export_contracts=True,
         export_tokens=True,
+        partition = 0,
+        offset = 0,
     ):
         validate_range(start_block, end_block)
         self.start_block = start_block
@@ -94,6 +96,9 @@ class ExportTraceGroupKafkaJob(BaseJob):
         self.export_contracts = export_contracts
         self.export_tokens = export_tokens
 
+        self.partition = partition
+        self.offset = offset
+
         self.enrich = enrich
 
         if (
@@ -106,7 +111,7 @@ class ExportTraceGroupKafkaJob(BaseJob):
             )
 
         self.web3 = web3
-        self.consumer = self._new_kafka_consumer(kafka_bootstrap_servers, kafka_group_id, kafka_topic)
+        self.consumer = self._new_kafka_consumer(kafka_bootstrap_servers, kafka_group_id, kafka_topic, self.partition, self.offset)
 
         self._init_mapper(
             **{
@@ -120,8 +125,7 @@ class ExportTraceGroupKafkaJob(BaseJob):
         consumer = Consumer({
             "bootstrap.servers": bootstrap_servers,
             "group.id": group_id,
-            "auto.offset.reset": "earliest",
-            "enable.auto.commit": False,
+            "enable.auto.commit": True,
         })
         consumer.assign([TopicPartition(topic, partition, offset)])
         return consumer
@@ -249,13 +253,16 @@ class ExportTraceGroupKafkaJob(BaseJob):
     def _get_traces_from_kafka(self, block_number_batch: list[int]):
         buffer: list[list[Segment]] = []
         trace_blocks = []
-        assembled_data_cnt = 0
-        while len(block_number_batch) != assembled_data_cnt:
+        while len(block_number_batch) != len(trace_blocks):
             msg = self.consumer.poll(timeout=5.0)
             if msg is None:
                 continue
             if msg.error():
                 raise Exception(f"Kafka consumer error: {msg.error()}")
+
+            self.partition = msg.partition()
+            self.offset = msg.offset()
+            print("partition: ", self.partition, "offset: ", self.offset)
             
             headers = dict(msg.headers())
             totalSegments: int = struct.unpack(">Q", headers["totalSegments"])[0]
@@ -275,8 +282,10 @@ class ExportTraceGroupKafkaJob(BaseJob):
                 trace_block_obj: dict = json.loads(assembled_data.trace)
                 assert trace_block_obj["blockNumber"] == assembled_data.block_number
                 assert isinstance(trace_block_obj, dict)
+                
+                if trace_block_obj["blockNumber"] not in block_number_batch:
+                    continue
 
-                assembled_data_cnt+=1
                 trace_blocks_chunk = [
                     {
                         "block_number": trace_block_obj["blockNumber"],
