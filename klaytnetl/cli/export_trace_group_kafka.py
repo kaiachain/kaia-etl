@@ -245,13 +245,13 @@ def export_trace_group_kafka(
         raise ValueError("Failed to get start timestamp")
 
     start_timestamp = (start_timestamp // 3600) * 3600  # Round down to nearest hour
-    end_timestamp = start_timestamp + 3600  # Add 1 hour (3600 seconds)
+    end_timestamp = start_timestamp + 3599  # Add 1 hour (3600 seconds)
     while True:
-        start, end = klaytn_service.get_block_range_for_timestamps(start_timestamp, end_timestamp - 1)
+        start, end = klaytn_service.get_block_range_for_timestamps(start_timestamp, end_timestamp)
         end = min(end, end_block)
         print("Exporting blocks from", start, "to", end)
         start_timestamp = end_timestamp
-        end_timestamp = start_timestamp + 3600
+        end_timestamp = start_timestamp + 3599
     
         # s3 export
         if s3_bucket or gcs_bucket:

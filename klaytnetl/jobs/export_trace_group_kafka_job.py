@@ -288,6 +288,8 @@ class ExportTraceGroupKafkaJob(BaseJob):
             for assembled_data in assembled_data_list:
                 trace_block_obj: dict = json.loads(assembled_data.trace)
                 if not (self.start_block <= trace_block_obj["blockNumber"] <= self.end_block):
+                    if trace_block_obj["blockNumber"] > self.end_block:
+                        return trace_blocks
                     continue
                 assert isinstance(trace_block_obj, dict)
                 trace_blocks_chunk = [
