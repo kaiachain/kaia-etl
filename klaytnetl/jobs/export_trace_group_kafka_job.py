@@ -195,56 +195,61 @@ class ExportTraceGroupKafkaJob(BaseJob):
             blocks_map[block["block_number"]] = block
         
         trace_count = 0
-        for raw_trace_block in trace_blocks:
-            block_number = raw_trace_block.get("block_number")
-            block = blocks_map.get(block_number)
-            trace_block: KlaytnTraceBlock = (
-                self.trace_block_mapper.json_dict_to_trace_block(
-                    raw_trace_block, **block
-                )
-            )
-
-            for trace in self.trace_mapper.trace_block_to_trace(trace_block):
-                trace_count += 1
-
-                if self.export_traces:
-                    self.item_exporter.export_item(
-                        self.trace_mapper.trace_to_dict(trace)
+        try:
+            for raw_trace_block in trace_blocks:
+                block_number = raw_trace_block.get("block_number")
+                block = blocks_map.get(block_number)
+                trace_block: KlaytnTraceBlock = (
+                    self.trace_block_mapper.json_dict_to_trace_block(
+                        raw_trace_block, **block
                     )
+                )
 
-                if self._require_contract and is_contract_creation_trace(trace):
-                    if self.enrich:
-                        contract = KlaytnContract.from_trace(
-                            trace, self.contract_service
-                        )
-                    else:
-                        contract = KlaytnRawContract.from_trace(
-                            trace, self.contract_service
-                        )
+                for trace in self.trace_mapper.trace_block_to_trace(trace_block):
+                    trace_count += 1
 
-                    if self.export_contracts:
+                    if self.export_traces:
                         self.item_exporter.export_item(
-                            self.contract_mapper.contract_to_dict(contract)
+                            self.trace_mapper.trace_to_dict(trace)
                         )
 
-                    if self._require_token and (
-                        contract.is_erc20 or contract.is_erc721 or contract.is_erc1155
-                    ):
-                        token_metadata = self.token_service.get_token_metadata(
-                            contract.address
-                        )
+                    if self._require_contract and is_contract_creation_trace(trace):
                         if self.enrich:
-                            token = KlaytnToken.from_contract(
-                                contract, **token_metadata
+                            contract = KlaytnContract.from_trace(
+                                trace, self.contract_service
                             )
                         else:
-                            token = KlaytnRawToken.from_contract(
-                                contract, **token_metadata
+                            contract = KlaytnRawContract.from_trace(
+                                trace, self.contract_service
                             )
-                        if self.export_tokens:
+
+                        if self.export_contracts:
                             self.item_exporter.export_item(
-                                self.token_mapper.token_to_dict(token)
+                                self.contract_mapper.contract_to_dict(contract)
                             )
+
+                        if self._require_token and (
+                            contract.is_erc20 or contract.is_erc721 or contract.is_erc1155
+                        ):
+                            token_metadata = self.token_service.get_token_metadata(
+                                contract.address
+                            )
+                            if self.enrich:
+                                token = KlaytnToken.from_contract(
+                                    contract, **token_metadata
+                                )
+                            else:
+                                token = KlaytnRawToken.from_contract(
+                                    contract, **token_metadata
+                                )
+                            if self.export_tokens:
+                                self.item_exporter.export_item(
+                                    self.token_mapper.token_to_dict(token)
+                                )
+        except Exception as e:
+            print(f"An error occurred during export: {e}")
+            with open("error.log", "a") as log_file:
+                log_file.write(f"Error while handling block {block_number}: {str(e)}\n")
         return trace_count
 
     # pools until all blocks are filled
