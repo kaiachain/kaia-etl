@@ -37,7 +37,6 @@ from klaytnetl.mappers.token_mapper import KlaytnTokenMapper
 
 from klaytnetl.utils import (
     validate_range,
-    rpc_response_to_result,
     rpc_response_batch_to_results,
 )
 
@@ -289,7 +288,7 @@ class ExportTraceGroupKafkaJob(BaseJob):
                 trace_blocks_chunk = [
                     {
                         "block_number": trace_block_obj["blockNumber"],
-                        "transaction_traces": list(map(lambda tx: tx["result"], trace_block_obj["result"])),
+                        "transaction_traces": trace_block_obj["result"],
                     }
                 ]
 
