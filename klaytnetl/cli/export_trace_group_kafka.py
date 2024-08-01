@@ -248,6 +248,7 @@ def export_trace_group_kafka(
     end_timestamp = start_timestamp + 3600  # Add 1 hour (3600 seconds)
     while True:
         start, end = klaytn_service.get_block_range_for_timestamps(start_timestamp, end_timestamp)
+        end -= 1 # so it doesn't overlap with next loop's start
         end = min(end, end_block)
         print("Exporting blocks from", start, "to", end)
         start_timestamp = end_timestamp
