@@ -250,7 +250,7 @@ def export_trace_group_kafka(
         start, end = klaytn_service.get_block_range_for_timestamps(start_timestamp, end_timestamp)
         end = min(end, end_block)
         print("Exporting blocks from", start, "to", end)
-        start_timestamp = end_timestamp
+        start_timestamp = start_timestamp + 3600
         end_timestamp = start_timestamp + 3599
     
         # s3 export
