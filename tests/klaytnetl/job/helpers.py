@@ -45,7 +45,7 @@ def get_web3_provider(provider_type, read_resource_lambda=None, batch=False):
             provider = MockWeb3Provider(read_resource_lambda)
     elif provider_type == "fantrie":
         provider_url = os.environ.get(
-            "PROVIDER_URL", "https://cypress.fandom.finance/archive"
+            "PROVIDER_URL", "https://archive-en.node.kaia.io"
         )
         if batch:
             provider = BatchHTTPProvider(provider_url)

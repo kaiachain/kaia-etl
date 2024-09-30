@@ -194,11 +194,7 @@ RECEIPTS_SCHEMA = [
         "mode": "REPEATED",
         "fields": [
             {"name": "address", "type": "STRING"},
-            {
-                "name": "storage_keys",
-                "type": "STRUCT",
-                "fields": [{"name": "hash", "type": "STRING"}],
-            },
+            {"name": "storage_keys", "type": "STRING", "mode": "REPEATED"},
         ],
         "description": "An array of accessList",
     },
