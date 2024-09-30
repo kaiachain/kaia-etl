@@ -83,7 +83,7 @@ def test_get_block_range_for_timestamps(
 
 def get_new_klaytn_service():
     provider_url = os.environ.get(
-        "PROVIDER_URL", "https://cypress.fandom.finance/archive"
+        "PROVIDER_URL", "https://archive-en.node.kaia.io"
     )
     web3 = build_web3(HTTPProvider(provider_url))
     return KlaytnService(web3)
